@@ -7,6 +7,7 @@ require('dotenv').config();
 let AWS = require('../utils/awsUpload')
 
 
+
 const openai = new OpenAI({
     apiKey: process.env.CHATGPT_KEY,
 });
