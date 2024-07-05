@@ -34,7 +34,7 @@ exports.addPlans = async (req, res) => {
              }
 
         const file = await openai.files.create({
-            file: fs.createReadStream(path.join(__dirname, '../public/csv', 'costing.xlsx')),
+            file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
             purpose: "assistants",
         });
 
