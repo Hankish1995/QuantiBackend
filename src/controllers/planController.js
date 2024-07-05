@@ -58,7 +58,7 @@ exports.addPlans = async (req, res) => {
                     "content": [
                         {
                             "type": "text",
-                            "text": "use pricing from uploaded spreadsheet file, please analyse the house plan pixel to pixel each dimension should be correct as mentioned in the image. Don't give output like chat just a professional output for which you are trained for."
+                            "text": "use pricing from uploaded spreadsheet file, in file don't consider decimal values. Please analyse the house plan pixel to pixel each dimension should be correct as mentioned in the image. Don't give output like chat just a professional output for which you are trained for."
                         },
                         {
                             "type": "image_url",
