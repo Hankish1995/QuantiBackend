@@ -5,6 +5,9 @@ const fs = require('fs')
 const path = require('path')
 require('dotenv').config();
 let AWS = require('../utils/awsUpload')
+// let {fromPath,fromBuffer} = require('pdf2pic')
+// const { convert } = require('pdf-poppler');
+
 
 
 
@@ -24,7 +27,8 @@ exports.addPlans = async (req, res) => {
              if(req.files===null){return res.status(400).json({message:"Please add Image",type:'error'}) }
 
              let img = req.files.planImage
-             if (img.mimetype === "image/jpeg" || img.mimetype === "image/png" || img.mimetype === "image/jpg") {
+
+             if (img.mimetype === "image/jpeg" || img.mimetype === "image/png" || img.mimetype === "image/jpg" ) {
              const planImagePath = `planImage/${userId}`;
              const contentType = img.mimetype;
              const url = await AWS.uploadS3(img, planImagePath, contentType);
@@ -104,6 +108,95 @@ exports.addPlans = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error", type: "error", error: error.message });
     }
 };
+
+
+
+
+
+
+
+
+// async function convertPDFToImages(pdfFilePath) {
+//     const outputDir = path.join(__dirname, 'temp');
+//     const opts = {
+//         format: 'jpeg',
+//         out_dir: outputDir,
+//         out_prefix: 'page', 
+//         page: null, 
+//     };
+
+//     try {
+//         console.log('images ------->>',pdfFilePath)
+//         const images = await convert(pdfFilePath, opts);
+//         console.log('images ------->>',images)
+//         if (!Array.isArray(images)) {
+//             throw new Error('Convert function did not return an array of images');
+//         }
+//         const imagePaths = images.map(img => path.join(outputDir, img));
+//         return imagePaths;
+//     } catch (error) {
+//         console.error('Error converting PDF to images:', error);
+//         throw error;
+//     }
+// }
+
+
+// exports.addPlans = async (req, res) => {
+//     try {
+//         let userId = req.result.id;
+//         let { planName, planAddress } = req.body;
+//         let planImage = '';
+
+//         if (!req.files || req.files === null) {
+//             return res.status(400).json({ message: "Please add an image or PDF file", type: 'error' });
+//         }
+
+//         let img = req.files.planImage;
+
+//         if (img.mimetype === "application/pdf") {
+//             const tempFilePath = path.join(__dirname, 'temp', img.name);
+//             await img.mv(tempFilePath);
+    
+            
+//             const imagePaths = await convertPDFToImages(tempFilePath);
+    
+//         } else if (img.mimetype === "image/jpeg" || img.mimetype === "image/png" || img.mimetype === "image/jpg") {
+           
+//             const planImagePath = `planImage/${userId}`;
+//             const contentType = img.mimetype;
+//             const url = await AWS.uploadS3(img, planImagePath, contentType);
+//             planImage = url;
+//         } else {
+//             return res.status(400).json({ message: "This file format is not allowed. You can only add images or PDF files.", type: "error" });
+//         }
+
+//         console.log("Uploaded plan image:-------->>>", planImage);
+      
+
+//     } catch (error) {
+//         console.error("ERROR:", error);
+//         return res.status(500).json({ message: "Internal Server Error", type: "error", error: error.message });
+//     }
+// };
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
