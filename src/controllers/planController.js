@@ -5,8 +5,7 @@ const fs = require('fs')
 const path = require('path')
 require('dotenv').config();
 let AWS = require('../utils/awsUpload')
-// let {fromPath,fromBuffer} = require('pdf2pic')
-// const { convert } = require('pdf-poppler');
+const poppler = require('pdf-poppler');
 
 
 
@@ -17,27 +16,121 @@ const openai = new OpenAI({
 
 
 
+// exports.addPlans = async (req, res) => {
+//     try {
+     
+//         let userId = req.result.id;
+//         let { planName, planAddress } = req.body;
+//         let planImage = '';
+
+//              if(req.files===null){return res.status(400).json({message:"Please add Image",type:'error'}) }
+
+//              let img = req.files.planImage
+
+//              if (img.mimetype === "image/jpeg" || img.mimetype === "image/png" || img.mimetype === "image/jpg" ) {
+//              const planImagePath = `planImage/${userId}`;
+//              const contentType = img.mimetype;
+//              const url = await AWS.uploadS3(img, planImagePath, contentType);
+//              planImage = url;
+//              } else {
+//              return res.status(400).json({ message: "This file format not allowed. You can only add images having extensions :jpeg,png,jpg ." })
+//              }
+
+//         const file = await openai.files.create({
+//             file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
+//             purpose: "assistants",
+//         });
+
+//         const assistant = await openai.beta.assistants.create({
+//             name: "Quanti",
+//             description: "Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.",
+//             instructions: "Quanti is designed to assist with quantity surveying. It reads and analyzes architectural drawings to calculate the volume and area of various elements. Once these calculations are made, it refers to an uploaded pricing spreadsheet to determine the cost of the project. Quanti provides accurate, clear, and detailed responses based on the data provided. It emphasizes precision and clarity in its calculations and avoids any assumptions without data. Quanti communicates in a casual tone, making it approachable and easy to understand for tradesmen. When a house plan is uploaded, Quanti the total quote based on rates from an uploaded spreadsheet",
+//             model: "gpt-4o",
+//             tools: [{ "type": "code_interpreter" }],
+//             tool_resources: {
+//                 "code_interpreter": {
+//                     "file_ids": [file.id]
+//                 }
+//             }
+//         });
+
+//         const thread = await openai.beta.threads.create({
+//             messages: [
+//                 {
+//                     "role": "user",
+//                     "content": [
+//                         {
+//                             "type": "text",
+//                             "text": "use pricing from uploaded spreadsheet file,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone."
+//                         },
+//                         {
+//                             "type": "image_url",
+//                             "image_url": { "url": planImage }
+//                         }
+//                     ]
+//                 }
+//             ]
+//         });
+
+//         var accumulatedData =''
+
+//         const run = openai.beta.threads.runs.stream(thread.id, {
+//             assistant_id: assistant.id
+//         })
+//             .on('textCreated', (text) => {
+//                 process.stdout.write('\nassistant > ');
+//                 // res.write(`data: ${text}\n\n`);
+//                 // accumulatedData.push(text)
+
+//             })
+//             .on('textDelta', (textDelta, snapshot) => {
+//                 process.stdout.write(textDelta.value);
+//                 res.write(textDelta.value);
+//                 accumulatedData += textDelta.value; 
+//             })
+     
+//             .on('end', async() => {
+//                 let planObj = {
+//                     userId: userId,
+//                     planName: planName,
+//                     planAddress: planAddress,
+//                     imageUrl: planImage,
+//                     outputGenerated: accumulatedData
+//                 }
+//                 await planModel.create(planObj)
+//                 res.end();
+//                 // console.log('Accumulated Data:', accumulatedData);
+//             });
+
+//     } catch (error) {
+//         console.log("ERROR::", error);
+//         return res.status(500).json({ message: "Internal Server Error", type: "error", error: error.message });
+//     }
+// };
+
+
+
+
 exports.addPlans = async (req, res) => {
     try {
-     
+
         let userId = req.result.id;
         let { planName, planAddress } = req.body;
-        let planImage = '';
+        var accumulatedData =''
+        let pdfFile = req.files.planImage;
+        let planImage = ''
 
-             if(req.files===null){return res.status(400).json({message:"Please add Image",type:'error'}) }
+        if(req.files===null){return res.status(400).json({message:"Please add Image",type:'error'}) }
 
-             let img = req.files.planImage
-
-             if (img.mimetype === "image/jpeg" || img.mimetype === "image/png" || img.mimetype === "image/jpg" ) {
-             const planImagePath = `planImage/${userId}`;
-             const contentType = img.mimetype;
-             const url = await AWS.uploadS3(img, planImagePath, contentType);
-             planImage = url;
-             } else {
-             return res.status(400).json({ message: "This file format not allowed. You can only add images having extensions :jpeg,png,jpg ." })
-             }
-
-        const file = await openai.files.create({
+        const planImagePath = `planImage/${userId}`;
+        const contentType = pdfFile.mimetype;
+        const url = await AWS.uploadS3(pdfFile, planImagePath, contentType);
+        planImage = url;
+       
+        if (pdfFile.mimetype !== 'application/pdf') {
+            if (pdfFile.mimetype === "image/jpeg" || pdfFile.mimetype === "image/png" || pdfFile.mimetype === "image/jpg" ) {
+                console.log("inside the image section -----")
+            const file = await openai.files.create({
             file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
             purpose: "assistants",
         });
@@ -103,95 +196,139 @@ exports.addPlans = async (req, res) => {
                 // console.log('Accumulated Data:', accumulatedData);
             });
 
+            }else{
+                return res.status(400).json({ message: "This file format not allowed. You can only add images having extensions :jpeg,png,jpg  and pdf." })
+            }
+        } else{
+       console.log("inside the pdf section -----")
+        let outputDir = path.join(__dirname, 'output');
+        if (!fs.existsSync(outputDir)) {
+            fs.mkdirSync(outputDir, { recursive: true });
+        }
+
+        let pdfFilePath = path.join(outputDir, pdfFile.name);
+        let options = {
+            format: 'png',
+            out_dir: outputDir,
+            out_prefix: path.parse(pdfFile.name).name,
+            page: null  
+        };
+
+        pdfFile.mv(pdfFilePath, async (err) => {
+            if (err) return res.status(500).send(err);
+
+            if (!fs.existsSync(pdfFilePath)) {
+                console.error('File does not exist:', pdfFilePath);
+                return res.status(500).send('File upload failed.');
+            }
+
+            try {
+                await poppler.convert(pdfFilePath, options);
+                fs.readdir(outputDir, async (err, files) => {
+                    if (err) return res.status(500).send('Error reading output directory.');
+
+                    const imageFiles = files.filter(file => file.endsWith('.png'));
+                    let storeUploadedFileObj =[]
+                    const uploadedImageFiles = await Promise.all(imageFiles.map(async (file) => {
+                        const filePath = path.join(outputDir, file);
+                    
+                        const response = await openai.files.create({
+                            file: fs.createReadStream(filePath),
+                            purpose: "vision",
+                        });
+                        storeUploadedFileObj.push(response)
+                  
+                        return response;
+                    }));
+
+                    console.log("store-",storeUploadedFileObj)
+                 
+                    const file = await openai.files.create({
+                        file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
+                        purpose: "assistants",
+                    });
+
+                    const assistant = await openai.beta.assistants.create({
+                        name: "Quanti",
+                        description: "Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.",
+                        instructions: "Quanti is designed to assist with quantity surveying. It reads and analyzes architectural drawings to calculate the volume and area of various elements. Once these calculations are made, it refers to an uploaded pricing spreadsheet to determine the cost of the project. Quanti provides accurate, clear, and detailed responses based on the data provided. It emphasizes precision and clarity in its calculations and avoids any assumptions without data. Quanti communicates in a casual tone, making it approachable and easy to understand for tradesmen. When a house plan is uploaded, Quanti the total quote based on rates from an uploaded spreadsheet",
+                        model: "gpt-4o",
+                        tools: [{ "type": "code_interpreter" }],
+                        tool_resources: {
+                            "code_interpreter": {
+                                "file_ids": [file.id]
+                            }
+                        }
+                    });
+
+                    const thread = await openai.beta.threads.create({
+                        messages: [
+                            {
+                                "role": "user",
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": "Use pricing from uploaded spreadsheet file, Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone."
+                                    },
+                                    ...storeUploadedFileObj.map(imgFile => ({
+                                        "type": "image_file",
+                                        "image_file": {"file_id": imgFile.id}
+                                    }))
+                                ]
+                            }
+                        ]
+                    });
+
+      
+
+        const run = await openai.beta.threads.runs.stream(thread.id, {
+            assistant_id: assistant.id
+        })
+            .on('textCreated', (text) => {
+                process.stdout.write('\nassistant > ');
+                // res.write(`data: ${text}\n\n`);
+                // accumulatedData.push(text)
+
+            })
+            .on('textDelta', (textDelta, snapshot) => {
+                process.stdout.write(textDelta.value);
+                res.write(textDelta.value);
+                accumulatedData += textDelta.value; 
+            })
+     
+            .on('end', async() => {
+                let planObj = {
+                    userId: userId,
+                    planName: planName,
+                    planAddress: planAddress,
+                    imageUrl: planImage,
+                    outputGenerated: accumulatedData
+                }
+                await planModel.create(planObj)
+                res.end();
+               
+            });
+
+           await fs.rm(outputDir, { recursive: true, force: true }, (err) => {
+                if (err) {
+                    console.error('Error deleting output directory:', err);
+                } else {
+                    console.log('Output directory deleted successfully.');
+                }
+            });
+
+                });
+            } catch (err) {
+                console.error('Error during conversion:', err);
+                res.status(500).send('Error converting PDF to images.');
+            }
+        });
+    }
     } catch (error) {
         console.log("ERROR::", error);
         return res.status(500).json({ message: "Internal Server Error", type: "error", error: error.message });
     }
 };
-
-
-
-
-
-
-
-
-// async function convertPDFToImages(pdfFilePath) {
-//     const outputDir = path.join(__dirname, 'temp');
-//     const opts = {
-//         format: 'jpeg',
-//         out_dir: outputDir,
-//         out_prefix: 'page', 
-//         page: null, 
-//     };
-
-//     try {
-//         console.log('images ------->>',pdfFilePath)
-//         const images = await convert(pdfFilePath, opts);
-//         console.log('images ------->>',images)
-//         if (!Array.isArray(images)) {
-//             throw new Error('Convert function did not return an array of images');
-//         }
-//         const imagePaths = images.map(img => path.join(outputDir, img));
-//         return imagePaths;
-//     } catch (error) {
-//         console.error('Error converting PDF to images:', error);
-//         throw error;
-//     }
-// }
-
-
-// exports.addPlans = async (req, res) => {
-//     try {
-//         let userId = req.result.id;
-//         let { planName, planAddress } = req.body;
-//         let planImage = '';
-
-//         if (!req.files || req.files === null) {
-//             return res.status(400).json({ message: "Please add an image or PDF file", type: 'error' });
-//         }
-
-//         let img = req.files.planImage;
-
-//         if (img.mimetype === "application/pdf") {
-//             const tempFilePath = path.join(__dirname, 'temp', img.name);
-//             await img.mv(tempFilePath);
-    
-            
-//             const imagePaths = await convertPDFToImages(tempFilePath);
-    
-//         } else if (img.mimetype === "image/jpeg" || img.mimetype === "image/png" || img.mimetype === "image/jpg") {
-           
-//             const planImagePath = `planImage/${userId}`;
-//             const contentType = img.mimetype;
-//             const url = await AWS.uploadS3(img, planImagePath, contentType);
-//             planImage = url;
-//         } else {
-//             return res.status(400).json({ message: "This file format is not allowed. You can only add images or PDF files.", type: "error" });
-//         }
-
-//         console.log("Uploaded plan image:-------->>>", planImage);
-      
-
-//     } catch (error) {
-//         console.error("ERROR:", error);
-//         return res.status(500).json({ message: "Internal Server Error", type: "error", error: error.message });
-//     }
-// };
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
