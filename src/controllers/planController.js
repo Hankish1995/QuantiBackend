@@ -337,6 +337,9 @@ const openai = new OpenAI({
 
 
 
+
+
+
 exports.addPlans = async (req, res) => {
     try {
 
@@ -423,7 +426,7 @@ exports.addPlans = async (req, res) => {
             });
 
             }else{
-                return res.status(400).json({ message: "This file format not allowed. You can only add images having extensions :jpeg,png,jpg  and pdf." })
+                return res.status(400).json({ message: "This file format not allowed. You can only add images with extension jpeg,png,jpg and pdf." })
             }
         } else{
        console.log("inside the pdf section -----")
@@ -451,11 +454,11 @@ exports.addPlans = async (req, res) => {
    
       
        const options = {
-           density: 100,
+           density: 300,
            saveFilename: "page",
            savePath: outputDir,
            format: "png",
-           width: 600,
+           width: 600,  
            height: 600
        };
        const convert = fromPath(pdfFilePath, options);
