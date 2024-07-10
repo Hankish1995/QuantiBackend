@@ -28,7 +28,6 @@
     "otp-generator": "^4.0.1",
     "path": "^0.12.7",
     "pdf-lib": "^1.17.1",
-    "pdf-poppler": "^0.2.1",
     "pdf-to-img": "^4.0.0",
     "pdf2pic": "^3.1.1",
     "pngjs": "^7.0.0",
