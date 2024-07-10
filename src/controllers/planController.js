@@ -7,8 +7,8 @@ require('dotenv').config();
 let AWS = require('../utils/awsUpload')
 const { PDFDocument } = require('pdf-lib');
 const { fromPath } = require('pdf2pic'); 
-const { v4: uuidv4 } = require('uuid');
-const poppler =  require('pdf-poppler')
+
+
 
 
 
