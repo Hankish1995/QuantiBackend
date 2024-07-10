@@ -454,7 +454,7 @@ exports.addPlans = async (req, res) => {
    
       
        const options = {
-           density: 300,
+           density: 400,
            saveFilename: "page",
            savePath: outputDir,
            format: "png",
