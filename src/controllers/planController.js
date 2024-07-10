@@ -5,10 +5,10 @@ const fs = require('fs')
 const path = require('path')
 require('dotenv').config();
 let AWS = require('../utils/awsUpload')
-// const poppler = require('pdf-poppler');
-// const { fromPath } = require('pdf2pic');
-// const { PDFDocument, rgb } = require('pdf-lib');
-// const sharp = require('sharp');
+const { PDFDocument } = require('pdf-lib');
+const { fromPath } = require('pdf2pic'); 
+const { v4: uuidv4 } = require('uuid');
+const poppler =  require('pdf-poppler')
 
 
 
@@ -18,97 +18,97 @@ const openai = new OpenAI({
 
 
 
-exports.addPlans = async (req, res) => {
-    try {
+// exports.addPlans = async (req, res) => {
+//     try {
 
-        let userId = req.result.id;
-        let { planName, planAddress } = req.body;
-        let planImage = '';
+//         let userId = req.result.id;
+//         let { planName, planAddress } = req.body;
+//         let planImage = '';
 
-             if(req.files===null){return res.status(400).json({message:"Please add Image",type:'error'}) }
+//              if(req.files===null){return res.status(400).json({message:"Please add Image",type:'error'}) }
 
-             let img = req.files.planImage
+//              let img = req.files.planImage
 
-             if (img.mimetype === "image/jpeg" || img.mimetype === "image/png" || img.mimetype === "image/jpg" ) {
-             const planImagePath = `planImage/${userId}`;
-             const contentType = img.mimetype;
-             const url = await AWS.uploadS3(img, planImagePath, contentType);
-             planImage = url;
-             } else {
-             return res.status(400).json({ message: "This file format not allowed. You can only add images having extensions :jpeg,png,jpg ." })
-             }
+//              if (img.mimetype === "image/jpeg" || img.mimetype === "image/png" || img.mimetype === "image/jpg" ) {
+//              const planImagePath = `planImage/${userId}`;
+//              const contentType = img.mimetype;
+//              const url = await AWS.uploadS3(img, planImagePath, contentType);
+//              planImage = url;
+//              } else {
+//              return res.status(400).json({ message: "This file format not allowed. You can only add images having extensions :jpeg,png,jpg ." })
+//              }
 
-        const file = await openai.files.create({
-            file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
-            purpose: "assistants",
-        });
+//         const file = await openai.files.create({
+//             file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
+//             purpose: "assistants",
+//         });
 
-        const assistant = await openai.beta.assistants.create({
-            name: "Quanti",
-            description: "Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.",
-            instructions: "Quanti is designed to assist with quantity surveying. It reads and analyzes architectural drawings to calculate the volume and area of various elements. Once these calculations are made, it refers to an uploaded pricing spreadsheet to determine the cost of the project. Quanti provides accurate, clear, and detailed responses based on the data provided. It emphasizes precision and clarity in its calculations and avoids any assumptions without data. Quanti communicates in a casual tone, making it approachable and easy to understand for tradesmen. When a house plan is uploaded, Quanti the total quote based on rates from an uploaded spreadsheet",
-            model: "gpt-4o",
-            tools: [{ "type": "code_interpreter" }],
-            tool_resources: {
-                "code_interpreter": {
-                    "file_ids": [file.id]
-                }
-            }
-        });
+//         const assistant = await openai.beta.assistants.create({
+//             name: "Quanti",
+//             description: "Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.",
+//             instructions: "Quanti is designed to assist with quantity surveying. It reads and analyzes architectural drawings to calculate the volume and area of various elements. Once these calculations are made, it refers to an uploaded pricing spreadsheet to determine the cost of the project. Quanti provides accurate, clear, and detailed responses based on the data provided. It emphasizes precision and clarity in its calculations and avoids any assumptions without data. Quanti communicates in a casual tone, making it approachable and easy to understand for tradesmen. When a house plan is uploaded, Quanti the total quote based on rates from an uploaded spreadsheet",
+//             model: "gpt-4o",
+//             tools: [{ "type": "code_interpreter" }],
+//             tool_resources: {
+//                 "code_interpreter": {
+//                     "file_ids": [file.id]
+//                 }
+//             }
+//         });
 
-        const thread = await openai.beta.threads.create({
-            messages: [
-                {
-                    "role": "user",
-                    "content": [
-                        {
-                            "type": "text",
-                            "text": "use pricing from uploaded spreadsheet file,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone."
-                        },
-                        {
-                            "type": "image_url",
-                            "image_url": { "url": planImage }
-                        }
-                    ]
-                }
-            ]
-        });
+//         const thread = await openai.beta.threads.create({
+//             messages: [
+//                 {
+//                     "role": "user",
+//                     "content": [
+//                         {
+//                             "type": "text",
+//                             "text": "use pricing from uploaded spreadsheet file,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone."
+//                         },
+//                         {
+//                             "type": "image_url",
+//                             "image_url": { "url": planImage }
+//                         }
+//                     ]
+//                 }
+//             ]
+//         });
 
-        var accumulatedData =''
+//         var accumulatedData =''
 
-        const run = openai.beta.threads.runs.stream(thread.id, {
-            assistant_id: assistant.id
-        })
-            .on('textCreated', (text) => {
-                process.stdout.write('\nassistant > ');
-                // res.write(`data: ${text}\n\n`);
-                // accumulatedData.push(text)
+//         const run = openai.beta.threads.runs.stream(thread.id, {
+//             assistant_id: assistant.id
+//         })
+//             .on('textCreated', (text) => {
+//                 process.stdout.write('\nassistant > ');
+//                 // res.write(`data: ${text}\n\n`);
+//                 // accumulatedData.push(text)
 
-            })
-            .on('textDelta', (textDelta, snapshot) => {
-                process.stdout.write(textDelta.value);
-                res.write(textDelta.value);
-                accumulatedData += textDelta.value; 
-            })
+//             })
+//             .on('textDelta', (textDelta, snapshot) => {
+//                 process.stdout.write(textDelta.value);
+//                 res.write(textDelta.value);
+//                 accumulatedData += textDelta.value; 
+//             })
 
-            .on('end', async() => {
-                let planObj = {
-                    userId: userId,
-                    planName: planName,
-                    planAddress: planAddress,
-                    imageUrl: planImage,
-                    outputGenerated: accumulatedData
-                }
-                await planModel.create(planObj)
-                res.end();
-                // console.log('Accumulated Data:', accumulatedData);
-            });
+//             .on('end', async() => {
+//                 let planObj = {
+//                     userId: userId,
+//                     planName: planName,
+//                     planAddress: planAddress,
+//                     imageUrl: planImage,
+//                     outputGenerated: accumulatedData
+//                 }
+//                 await planModel.create(planObj)
+//                 res.end();
+//                 // console.log('Accumulated Data:', accumulatedData);
+//             });
 
-    } catch (error) {
-        console.log("ERROR::", error);
-        return res.status(500).json({ message: "Internal Server Error", type: "error", error: error.message });
-    }
-};
+//     } catch (error) {
+//         console.log("ERROR::", error);
+//         return res.status(500).json({ message: "Internal Server Error", type: "error", error: error.message });
+//     }
+// };
 
 
 
@@ -243,7 +243,7 @@ exports.addPlans = async (req, res) => {
 //                         return response;
 //                     }));
 
-//                     console.log("store-",storeUploadedFileObj)
+//                     console.log("store----",storeUploadedFileObj)
 
 //                     const file = await openai.files.create({
 //                         file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
@@ -337,253 +337,245 @@ exports.addPlans = async (req, res) => {
 
 
 
+exports.addPlans = async (req, res) => {
+    try {
 
-// exports.addPlans = async (req, res) => {
-//     try {
+        let userId = req.result.id;
+        let { planName, planAddress } = req.body;
+        var accumulatedData =''
+        let pdfFile = req.files.planImage;
+        let planImage = ''
 
-//         let userId = req.result.id;
-//         let { planName, planAddress } = req.body;
-//         var accumulatedData =''
-//         let pdfFile = req.files.planImage;
-//         let planImage = ''
+        if(req.files=== null){return res.status(400).json({message:"Please add Image",type:'error'}) }
 
-//         if(req.files=== null){return res.status(400).json({message:"Please add Image",type:'error'}) }
+        const planImagePath = `planImage/${userId}`;
+        const contentType = pdfFile.mimetype;
+        const url = await AWS.uploadS3(pdfFile, planImagePath, contentType);
+        planImage = url;
 
-//         const planImagePath = `planImage/${userId}`;
-//         const contentType = pdfFile.mimetype;
-//         const url = await AWS.uploadS3(pdfFile, planImagePath, contentType);
-//         planImage = url;
+        if (pdfFile.mimetype !== 'application/pdf') {
+            if (pdfFile.mimetype === "image/jpeg" || pdfFile.mimetype === "image/png" || pdfFile.mimetype === "image/jpg" ) {
+                console.log("inside the image section -----")
+            const file = await openai.files.create({
+            file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
+            purpose: "assistants",
+        });
 
-//         if (pdfFile.mimetype !== 'application/pdf') {
-//             if (pdfFile.mimetype === "image/jpeg" || pdfFile.mimetype === "image/png" || pdfFile.mimetype === "image/jpg" ) {
-//                 console.log("inside the image section -----")
-//             const file = await openai.files.create({
-//             file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
-//             purpose: "assistants",
-//         });
+        const assistant = await openai.beta.assistants.create({
+            name: "Quanti",
+            description: "Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.",
+            instructions: "Quanti is designed to assist with quantity surveying. It reads and analyzes architectural drawings to calculate the volume and area of various elements. Once these calculations are made, it refers to an uploaded pricing spreadsheet to determine the cost of the project. Quanti provides accurate, clear, and detailed responses based on the data provided. It emphasizes precision and clarity in its calculations and avoids any assumptions without data. Quanti communicates in a casual tone, making it approachable and easy to understand for tradesmen. When a house plan is uploaded, Quanti the total quote based on rates from an uploaded spreadsheet",
+            model: "gpt-4o",
+            tools: [{ "type": "code_interpreter" }],
+            tool_resources: {
+                "code_interpreter": {
+                    "file_ids": [file.id]
+                }
+            }
+        });
 
-//         const assistant = await openai.beta.assistants.create({
-//             name: "Quanti",
-//             description: "Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.",
-//             instructions: "Quanti is designed to assist with quantity surveying. It reads and analyzes architectural drawings to calculate the volume and area of various elements. Once these calculations are made, it refers to an uploaded pricing spreadsheet to determine the cost of the project. Quanti provides accurate, clear, and detailed responses based on the data provided. It emphasizes precision and clarity in its calculations and avoids any assumptions without data. Quanti communicates in a casual tone, making it approachable and easy to understand for tradesmen. When a house plan is uploaded, Quanti the total quote based on rates from an uploaded spreadsheet",
-//             model: "gpt-4o",
-//             tools: [{ "type": "code_interpreter" }],
-//             tool_resources: {
-//                 "code_interpreter": {
-//                     "file_ids": [file.id]
-//                 }
-//             }
-//         });
+        const thread = await openai.beta.threads.create({
+            messages: [
+                {
+                    "role": "user",
+                    "content": [
+                        {
+                            "type": "text",
+                            "text": "use pricing from uploaded spreadsheet file,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone."
+                        },
+                        {
+                            "type": "image_url",
+                            "image_url": { "url": planImage }
+                        }
+                    ]
+                }
+            ]
+        });
 
-//         const thread = await openai.beta.threads.create({
-//             messages: [
-//                 {
-//                     "role": "user",
-//                     "content": [
-//                         {
-//                             "type": "text",
-//                             "text": "use pricing from uploaded spreadsheet file,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone."
-//                         },
-//                         {
-//                             "type": "image_url",
-//                             "image_url": { "url": planImage }
-//                         }
-//                     ]
-//                 }
-//             ]
-//         });
+        var accumulatedData =''
 
-//         var accumulatedData =''
+        const run = openai.beta.threads.runs.stream(thread.id, {
+            assistant_id: assistant.id
+        })
+            .on('textCreated', (text) => {
+                process.stdout.write('\nassistant > ');
+                // res.write(`data: ${text}\n\n`);
+                // accumulatedData.push(text)
 
-//         const run = openai.beta.threads.runs.stream(thread.id, {
-//             assistant_id: assistant.id
-//         })
-//             .on('textCreated', (text) => {
-//                 process.stdout.write('\nassistant > ');
-//                 // res.write(`data: ${text}\n\n`);
-//                 // accumulatedData.push(text)
+            })
+            .on('textDelta', (textDelta, snapshot) => {
+                process.stdout.write(textDelta.value);
+                res.write(textDelta.value);
+                accumulatedData += textDelta.value; 
+            })
 
-//             })
-//             .on('textDelta', (textDelta, snapshot) => {
-//                 process.stdout.write(textDelta.value);
-//                 res.write(textDelta.value);
-//                 accumulatedData += textDelta.value; 
-//             })
+            .on('end', async() => {
+                let planObj = {
+                    userId: userId,
+                    planName: planName,
+                    planAddress: planAddress,
+                    imageUrl: planImage,
+                    outputGenerated: accumulatedData
+                }
+                await planModel.create(planObj)
+                res.end();
+                // console.log('Accumulated Data:', accumulatedData);
+            });
 
-//             .on('end', async() => {
-//                 let planObj = {
-//                     userId: userId,
-//                     planName: planName,
-//                     planAddress: planAddress,
-//                     imageUrl: planImage,
-//                     outputGenerated: accumulatedData
-//                 }
-//                 await planModel.create(planObj)
-//                 res.end();
-//                 // console.log('Accumulated Data:', accumulatedData);
-//             });
-
-//             }else{
-//                 return res.status(400).json({ message: "This file format not allowed. You can only add images having extensions :jpeg,png,jpg  and pdf." })
-//             }
-//         } else{
-//             async function pageToPNG(page, width, height) {
-//                 try {
-//                     // Example using sharp to create a blank image buffer
-//                     const pngBuffer = await sharp({
-//                         create: {
-//                             width: width,
-//                             height: height,
-//                             channels: 4,
-//                             background: { r: 255, g: 255, b: 255, alpha: 1 }
-//                         }
-//                     }).png().toBuffer();
-            
-//                     return pngBuffer;
-//                 } catch (error) {
-//                     console.error('Error converting page to PNG:', error);
-//                     throw error;
-//                 }
-//             }
-//             const outputDir = path.join(__dirname, 'output');
-//             // Create output directory if it doesn't exist
-             
-//              if (!fs.existsSync(outputDir)) {
-//                 fs.mkdirSync(outputDir, { recursive: true });
-//             }
-    
-          
-//             const pdfFilePath = path.join(outputDir, pdfFile.name);
-    
-//             // Move uploaded PDF file to output directory
-//             await pdfFile.mv(pdfFilePath);
-    
-//             // Load PDF using pdf-lib
-//             const pdfBytes = await fs.promises.readFile(pdfFilePath);
-//             const pdfDoc = await PDFDocument.load(pdfBytes);
-//             const numPages = pdfDoc.getPageCount();
-    
-//             // Convert each page to PNG using sharp and upload
-//             const storeUploadedFileObj = [];
-//             for (let pageNumber = 0; pageNumber < numPages; ++pageNumber) {
-//                 const page = pdfDoc.getPage(pageNumber);
-//                 const { width, height } = page.getSize();
-//        console.log(" dimensions -------",width,height,page)
-//                 // Extract page content as PNG buffer
-//                 const pngBuffer = await pageToPNG(page, width, height);
-    
-//                 // Save PNG to disk (optional)
-//                 const pngFilePath = path.join(outputDir, `${pdfFile.name}-page-${pageNumber + 1}.png`);
-//                 fs.writeFileSync(pngFilePath, pngBuffer);
-    
-//                 // Upload PNG to OpenAI or handle file upload
-//                 const response = await openai.files.create({
-//                     file: fs.createReadStream(pngFilePath),
-//                     purpose: "vision",
-//                 });
-//                 storeUploadedFileObj.push(response);
-    
-//                 // Optionally, you can remove the PNG file after upload
-//                 // fs.unlinkSync(pngFilePath);
-//             }
-    
-//             // Respond with uploaded file objects or any other response
-            
-
-//         // Respond with uploaded file objects or any other response
-//         // res.status(200).json({ uploadedFiles: storeUploadedFileObj });
-    
-//             // Respond with uploaded file objects or any other response
-//             // res.status(200).json({ uploadedFiles: storeUploadedFileObj });
-    
-//             // Respond with uploaded file objects or any other response
-//             // res.status(200).json({ uploadedFiles: storeUploadedFileObj });
-
-//         // Respond with uploaded file objects or any other response
-//         // res.status(200).json({ uploadedFiles: storeUploadedFileObj });
-
-//                     console.log("store-",storeUploadedFileObj)
-
-//                     // const file = await openai.files.create({
-//                     //     file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
-//                     //     purpose: "assistants",
-//                     // });
-
-//                     // const assistant = await openai.beta.assistants.create({
-//                     //     name: "Quanti",
-//                     //     description: "Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.",
-//                     //     instructions: "Quanti is designed to assist with quantity surveying. It reads and analyzes architectural drawings to calculate the volume and area of various elements. Once these calculations are made, it refers to an uploaded pricing spreadsheet to determine the cost of the project. Quanti provides accurate, clear, and detailed responses based on the data provided. It emphasizes precision and clarity in its calculations and avoids any assumptions without data. Quanti communicates in a casual tone, making it approachable and easy to understand for tradesmen. When a house plan is uploaded, Quanti the total quote based on rates from an uploaded spreadsheet",
-//                     //     model: "gpt-4o",
-//                     //     tools: [{ "type": "code_interpreter" }],
-//                     //     tool_resources: {
-//                     //         "code_interpreter": {
-//                     //             "file_ids": [file.id]
-//                     //         }
-//                     //     }
-//                     // });
-
-//                     // const thread = await openai.beta.threads.create({
-//                     //     messages: [
-//                     //         {
-//                     //             "role": "user",
-//                     //             "content": [
-//                     //                 {
-//                     //                     "type": "text",
-//                     //                     "text": "Use pricing from uploaded spreadsheet file, Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone."
-//                     //                 },
-//                     //                 ...storeUploadedFileObj.map(imgFile => ({
-//                     //                     "type": "image_file",
-//                     //                     "image_file": {"file_id": imgFile.id}
-//                     //                 }))
-//                     //             ]
-//                     //         }
-//                     //     ]
-//                     // });
-
-
-
-//         const run = await openai.beta.threads.runs.stream(thread.id, {
-//             assistant_id: assistant.id
-//         })
-//             .on('textCreated', (text) => {
-//                 process.stdout.write('\nassistant > ');
-//                 // res.write(`data: ${text}\n\n`);
-//                 // accumulatedData.push(text)
-
-//             })
-//             .on('textDelta', (textDelta, snapshot) => {
-//                 process.stdout.write(textDelta.value);
-//                 res.write(textDelta.value);
-//                 accumulatedData += textDelta.value; 
-//             })
-
-//             .on('end', async() => {
-//                 let planObj = {
-//                     userId: userId,
-//                     planName: planName,
-//                     planAddress: planAddress,
-//                     imageUrl: planImage,
-//                     outputGenerated: accumulatedData
-//                 }
-//                 await planModel.create(planObj)
-//                 // await fs.rm(outputDir, { recursive: true, force: true }, (err) => {
-//                 //     if (err) {
-//                 //         console.error('Error deleting output directory:', err);
-//                 //     } else {
-//                 //         console.log('Output directory deleted successfully.');
-//                 //     }
-//                 // });
-//                 res.end();
-
-
-//             });
+            }else{
+                return res.status(400).json({ message: "This file format not allowed. You can only add images having extensions :jpeg,png,jpg  and pdf." })
+            }
+        } else{
+       console.log("inside the pdf section -----")
+       
+       const outputDir = path.join(__dirname, 'output');
+       if (!fs.existsSync(outputDir)) {
+           fs.mkdirSync(outputDir, { recursive: true });
+       }
+   
+       const pdfFilePath = path.join(outputDir, pdfFile.name);
+       const pdfFileBuffer = pdfFile.data; 
+   
+       fs.writeFileSync(pdfFilePath, pdfFileBuffer);
+   
+       if (!fs.existsSync(pdfFilePath)) {
+           console.error('File does not exist:', pdfFilePath);
+           return res.status(500).send('File upload failed.');
+       }
+   
+       
+       const existingPdfBytes = fs.readFileSync(pdfFilePath);
+       const pdfDoc = await PDFDocument.load(existingPdfBytes);
+       const totalPages = pdfDoc.getPageCount();
+       console.log("pages---", totalPages);
+   
       
-//     }
-//     } catch (error) {
-//         console.log("ERROR::", error);
-//         return res.status(500).json({ message: "Internal Server Error", type: "error", error: error.message });
-//     }
-// };
+       const options = {
+           density: 100,
+           saveFilename: "page",
+           savePath: outputDir,
+           format: "png",
+           width: 600,
+           height: 600
+       };
+       const convert = fromPath(pdfFilePath, options);
+       
+       let storeUploadedFileObj = [];
+   
+       for (let pageNumber = 1; pageNumber <= totalPages; pageNumber++) {
+           try {
+               const imagePath = await convert(pageNumber, { responseType: "image" });
+               const fileName = `page_${pageNumber}.png`;
+               const filePath = path.join(outputDir, fileName);
+   
+              
+               const response = await openai.files.create({
+                   file: fs.createReadStream(imagePath.path),
+                   purpose: "vision",
+               });
+   
+               storeUploadedFileObj.push(response);
+               console.log(`Uploaded image ${pageNumber}: ${fileName}`);
+           } catch (conversionError) {
+               console.error('Error converting or uploading page:', conversionError);
+           }
+       }
+           
+
+                    console.log("store----",storeUploadedFileObj)
+
+                    const file = await openai.files.create({
+                        file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
+                        purpose: "assistants",
+                    });
+
+                    const assistant = await openai.beta.assistants.create({
+                        name: "Quanti",
+                        description: "Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.",
+                        instructions: "Quanti is designed to assist with quantity surveying. It reads and analyzes architectural drawings to calculate the volume and area of various elements. Once these calculations are made, it refers to an uploaded pricing spreadsheet to determine the cost of the project. Quanti provides accurate, clear, and detailed responses based on the data provided. It emphasizes precision and clarity in its calculations and avoids any assumptions without data. Quanti communicates in a casual tone, making it approachable and easy to understand for tradesmen. When a house plan is uploaded, Quanti the total quote based on rates from an uploaded spreadsheet",
+                        model: "gpt-4o",
+                        tools: [{ "type": "code_interpreter" }],
+                        tool_resources: {
+                            "code_interpreter": {
+                                "file_ids": [file.id]
+                            }
+                        }
+                    });
+
+                    const thread = await openai.beta.threads.create({
+                        messages: [
+                            {
+                                "role": "user",
+                                "content": [
+                                    {
+                                        "type": "text",
+                                        "text": "Use pricing from uploaded spreadsheet file, Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone."
+                                    },
+                                    ...storeUploadedFileObj.map(imgFile => ({
+                                        "type": "image_file",
+                                        "image_file": {"file_id": imgFile.id}
+                                    }))
+                                ]
+                            }
+                        ]
+                    });
+
+
+
+        const run = await openai.beta.threads.runs.stream(thread.id, {
+            assistant_id: assistant.id
+        })
+            .on('textCreated', (text) => {
+                process.stdout.write('\nassistant > ');
+                // res.write(`data: ${text}\n\n`);
+                // accumulatedData.push(text)
+
+            })
+            .on('textDelta', (textDelta, snapshot) => {
+                process.stdout.write(textDelta.value);
+                res.write(textDelta.value);
+                accumulatedData += textDelta.value; 
+            })
+
+            .on('end', async() => {
+                let planObj = {
+                    userId: userId,
+                    planName: planName,
+                    planAddress: planAddress,
+                    imageUrl: planImage,
+                    outputGenerated: accumulatedData
+                }
+                await planModel.create(planObj)
+                await fs.rm(outputDir, { recursive: true, force: true }, (err) => {
+                    if (err) {
+                        console.error('Error deleting output directory:', err);
+                    } else {
+                        console.log('Output directory deleted successfully.');
+                    }
+                });
+                res.end();
+
+
+            });
+
+
+
+           
+          
+    
+    }
+    } catch (error) {
+        console.log("ERROR::", error);
+        return res.status(500).json({ message: "Internal Server Error", type: "error", error: error.message });
+    }
+};
+
+
+
+
+
+
+
 
 
 
