@@ -7,7 +7,8 @@ require('dotenv').config();
 let AWS = require('../utils/awsUpload')
 const { PDFDocument } = require('pdf-lib');
 const { fromPath } = require('pdf2pic'); 
-
+let openAIModel = require('../models/openAI')
+let createAssistant  = require('../utils/OpenAI')
 
 
 
@@ -337,9 +338,6 @@ const openai = new OpenAI({
 
 
 
-
-
-
 exports.addPlans = async (req, res) => {
     try {
 
@@ -358,24 +356,28 @@ exports.addPlans = async (req, res) => {
 
         if (pdfFile.mimetype !== 'application/pdf') {
             if (pdfFile.mimetype === "image/jpeg" || pdfFile.mimetype === "image/png" || pdfFile.mimetype === "image/jpg" ) {
-                console.log("inside the image section -----")
+
+            console.log("inside the image section -----")
             const file = await openai.files.create({
             file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
             purpose: "assistants",
         });
 
-        const assistant = await openai.beta.assistants.create({
-            name: "Quanti",
-            description: "Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.",
-            instructions: "Quanti is designed to assist with quantity surveying. It reads and analyzes architectural drawings to calculate the volume and area of various elements. Once these calculations are made, it refers to an uploaded pricing spreadsheet to determine the cost of the project. Quanti provides accurate, clear, and detailed responses based on the data provided. It emphasizes precision and clarity in its calculations and avoids any assumptions without data. Quanti communicates in a casual tone, making it approachable and easy to understand for tradesmen. When a house plan is uploaded, Quanti the total quote based on rates from an uploaded spreadsheet",
-            model: "gpt-4o",
-            tools: [{ "type": "code_interpreter" }],
-            tool_resources: {
-                "code_interpreter": {
-                    "file_ids": [file.id]
-                }
+        let assistant;
+        let isAssistantIdExist = await openAIModel.findOne()
+       
+        if (isAssistantIdExist.assistantId) {
+            try {
+                assistant = await openai.beta.assistants.retrieve(isAssistantIdExist.assistantId);
+            } catch (error) {
+                console.log("Assistant not found, creating a new one");
+                assistant = await createAssistant(file.id);
             }
-        });
+        } else {
+            assistant = await createAssistant(file.id);
+            await openAIModel.findOneAndUpdate({$set:{assistantId:assistant.id}})
+        }
+
 
         const thread = await openai.beta.threads.create({
             messages: [
@@ -402,8 +404,6 @@ exports.addPlans = async (req, res) => {
         })
             .on('textCreated', (text) => {
                 process.stdout.write('\nassistant > ');
-                // res.write(`data: ${text}\n\n`);
-                // accumulatedData.push(text)
 
             })
             .on('textDelta', (textDelta, snapshot) => {
@@ -422,7 +422,7 @@ exports.addPlans = async (req, res) => {
                 }
                 await planModel.create(planObj)
                 res.end();
-                // console.log('Accumulated Data:', accumulatedData);
+                
             });
 
             }else{
@@ -437,6 +437,7 @@ exports.addPlans = async (req, res) => {
        }
    
        const pdfFilePath = path.join(outputDir, pdfFile.name);
+
        const pdfFileBuffer = pdfFile.data; 
    
        fs.writeFileSync(pdfFilePath, pdfFileBuffer);
@@ -448,18 +449,20 @@ exports.addPlans = async (req, res) => {
    
        
        const existingPdfBytes = fs.readFileSync(pdfFilePath);
+
+       
        const pdfDoc = await PDFDocument.load(existingPdfBytes);
        const totalPages = pdfDoc.getPageCount();
        console.log("pages---", totalPages);
    
       
        const options = {
-           density: 400,
+           density: 500,
            saveFilename: "page",
            savePath: outputDir,
            format: "png",
-           width: 600,  
-           height: 600
+           width: 1200,  
+           height: 1200
        };
        const convert = fromPath(pdfFilePath, options);
        
@@ -483,8 +486,6 @@ exports.addPlans = async (req, res) => {
                console.error('Error converting or uploading page:', conversionError);
            }
        }
-           
-
                     console.log("store----",storeUploadedFileObj)
 
                     const file = await openai.files.create({
@@ -492,18 +493,21 @@ exports.addPlans = async (req, res) => {
                         purpose: "assistants",
                     });
 
-                    const assistant = await openai.beta.assistants.create({
-                        name: "Quanti",
-                        description: "Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.",
-                        instructions: "Quanti is designed to assist with quantity surveying. It reads and analyzes architectural drawings to calculate the volume and area of various elements. Once these calculations are made, it refers to an uploaded pricing spreadsheet to determine the cost of the project. Quanti provides accurate, clear, and detailed responses based on the data provided. It emphasizes precision and clarity in its calculations and avoids any assumptions without data. Quanti communicates in a casual tone, making it approachable and easy to understand for tradesmen. When a house plan is uploaded, Quanti the total quote based on rates from an uploaded spreadsheet",
-                        model: "gpt-4o",
-                        tools: [{ "type": "code_interpreter" }],
-                        tool_resources: {
-                            "code_interpreter": {
-                                "file_ids": [file.id]
-                            }
+                    let assistant;
+                    let isAssistantIdExist = await openAIModel.findOne()
+                   
+                    if (isAssistantIdExist.assistantId) {
+                        try {
+                            assistant = await openai.beta.assistants.retrieve(isAssistantIdExist.assistantId);
+                        } catch (error) {
+                            console.log("Assistant not found, creating a new one");
+                            assistant = await createAssistant(file.id);
                         }
-                    });
+                    } else {
+                        assistant = await createAssistant(file.id);
+                        await openAIModel.findOneAndUpdate({$set:{assistantId:assistant.id}})
+                    }
+            
 
                     const thread = await openai.beta.threads.create({
                         messages: [
@@ -572,14 +576,6 @@ exports.addPlans = async (req, res) => {
         return res.status(500).json({ message: "Internal Server Error", type: "error", error: error.message });
     }
 };
-
-
-
-
-
-
-
-
 
 
 
@@ -691,3 +687,87 @@ exports.get_plan_estimates = async (req, res) => {
 }
 
 
+
+exports.AITestRoute = async(req,res)=>{
+    try{
+
+        let userId = '667bf9d5a731bfcb4e216eac'
+        let { planName, planAddress } = req.body;
+        let planImage = 'https://quantigpt.s3.amazonaws.com/planImage/66839a67c7e0d78dbd7a4352/floorplan1.png';
+
+      
+        const file = await openai.files.create({
+            file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
+            purpose: "assistants",
+        });
+
+        let assistant;
+        let isAssistantIdExist = await openAIModel.findOne()
+       
+        if (isAssistantIdExist.assistantId) {
+            try {
+                assistant = await openai.beta.assistants.retrieve(isAssistantIdExist.assistantId);
+            } catch (error) {
+                console.log("Assistant not found, creating a new one");
+                assistant = await createAssistant(file.id);
+            }
+        } else {
+            assistant = await createAssistant(file.id);
+            await openAIModel.findOneAndUpdate({$set:{assistantId:assistant.id}})
+        }
+
+        const thread = await openai.beta.threads.create({
+            messages: [
+                {
+                    role: "user",
+                    content: [
+                        {
+                            type: "text",
+                            text: "use pricing from uploaded spreadsheet file,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a professional tone dont give a chat like response."
+                        },
+                        {
+                            type: "image_url",
+                            image_url: { url: planImage }
+                        }
+                    ]
+                }
+            ]
+        });
+
+        var accumulatedData = '';
+
+        const run = openai.beta.threads.runs.stream(thread.id, {
+            assistant_id: assistant.id
+        })
+            .on('textCreated', (text) => {
+                process.stdout.write('\nassistant > ');
+              
+            })
+            .on('textDelta', (textDelta, snapshot) => {
+                process.stdout.write(textDelta.value);
+                res.write(textDelta.value);
+                accumulatedData += textDelta.value;
+            })
+            .on('end', async () => {
+                let planObj = {
+                    userId: userId,
+                    planName: planName,
+                    planAddress: planAddress,
+                    imageUrl: planImage,
+                    outputGenerated: accumulatedData
+                };
+                await planModel.create(planObj);
+                res.end();
+             
+            });
+
+    }catch(error){
+        console.log("ERROR:--",error)
+        return res.status(500).json({message:"Internal Server Error.",error:error.message})
+    }
+}
+
+
+
+
+ 

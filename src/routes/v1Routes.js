@@ -34,6 +34,7 @@ router.post('/addPlans', authentication, validateAddPlans, planController.addPla
 router.delete('/deletePlan', authentication, validateDeletePlan, planController.deletePlan)
 router.get('/getAllPlans', authentication, planController.getAllPlans)
 router.get('/get_plan_details',authentication,planController.get_plan_estimates)
+router.post('/AITestRoute',planController.AITestRoute)
 
 
 
