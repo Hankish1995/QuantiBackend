@@ -358,25 +358,26 @@ exports.addPlans = async (req, res) => {
             if (pdfFile.mimetype === "image/jpeg" || pdfFile.mimetype === "image/png" || pdfFile.mimetype === "image/jpg" ) {
 
             console.log("inside the image section -----")
-            const file = await openai.files.create({
-            file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
-            purpose: "assistants",
-        });
+            
+        //     const file = await openai.files.create({
+        //     file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
+        //     purpose: "assistants",
+        // });
 
-        let assistant;
-        let isAssistantIdExist = await openAIModel.findOne()
+        // let assistant;
+        // let isAssistantIdExist = await openAIModel.findOne()
        
-        if (isAssistantIdExist.assistantId) {
-            try {
-                assistant = await openai.beta.assistants.retrieve(isAssistantIdExist.assistantId);
-            } catch (error) {
-                console.log("Assistant not found, creating a new one");
-                assistant = await createAssistant(file.id);
-            }
-        } else {
-            assistant = await createAssistant(file.id);
-            await openAIModel.findOneAndUpdate({$set:{assistantId:assistant.id}})
-        }
+        // if (isAssistantIdExist.assistantId) {
+        //     try {
+        //         assistant = await openai.beta.assistants.retrieve(isAssistantIdExist.assistantId);
+        //     } catch (error) {
+        //         console.log("Assistant not found, creating a new one");
+        //         assistant = await createAssistant(file.id);
+        //     }
+        // } else {
+        //     assistant = await createAssistant(file.id);
+        //     await openAIModel.findOneAndUpdate({$set:{assistantId:assistant.id}})
+        // }
 
 
         const thread = await openai.beta.threads.create({
@@ -400,7 +401,7 @@ exports.addPlans = async (req, res) => {
         var accumulatedData =''
 
         const run = openai.beta.threads.runs.stream(thread.id, {
-            assistant_id: assistant.id
+            assistant_id: process.env.OPENAI_ASSISTANT_ID
         })
             .on('textCreated', (text) => {
                 process.stdout.write('\nassistant > ');
@@ -488,27 +489,27 @@ exports.addPlans = async (req, res) => {
        }
                     console.log("store----",storeUploadedFileObj)
 
-                    const file = await openai.files.create({
-                        file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
-                        purpose: "assistants",
-                    });
+                    // const file = await openai.files.create({
+                    //     file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
+                    //     purpose: "assistants",
+                    // });
 
-                    let assistant;
-                    let isAssistantIdExist = await openAIModel.findOne()
+                    // let assistant;
+                    // let isAssistantIdExist = await openAIModel.findOne()
                    
-                    if (isAssistantIdExist.assistantId) {
-                        try {
-                            assistant = await openai.beta.assistants.retrieve(isAssistantIdExist.assistantId);
-                        } catch (error) {
-                            console.log("Assistant not found, creating a new one");
-                            assistant = await createAssistant(file.id);
-                        }
-                    } else {
-                        assistant = await createAssistant(file.id);
-                        await openAIModel.findOneAndUpdate({$set:{assistantId:assistant.id}})
-                    }
+                    // if (isAssistantIdExist.assistantId) {
+                    //     try {
+                    //         assistant = await openai.beta.assistants.retrieve(isAssistantIdExist.assistantId);
+                    //     } catch (error) {
+                    //         console.log("Assistant not found, creating a new one");
+                    //         assistant = await createAssistant(file.id);
+                    //     }
+                    // } else {
+                    //     assistant = await createAssistant(file.id);
+                    //     await openAIModel.findOneAndUpdate({$set:{assistantId:assistant.id}})
+                    // }
             
-
+                   
                     const thread = await openai.beta.threads.create({
                         messages: [
                             {
@@ -530,7 +531,7 @@ exports.addPlans = async (req, res) => {
 
 
         const run = await openai.beta.threads.runs.stream(thread.id, {
-            assistant_id: assistant.id
+            assistant_id: process.env.OPENAI_ASSISTANT_ID
         })
             .on('textCreated', (text) => {
                 process.stdout.write('\nassistant > ');
@@ -564,11 +565,7 @@ exports.addPlans = async (req, res) => {
 
 
             });
-
-
-
-           
-          
+ 
     
     }
     } catch (error) {
@@ -696,35 +693,38 @@ exports.AITestRoute = async(req,res)=>{
         let planImage = 'https://quantigpt.s3.amazonaws.com/planImage/66839a67c7e0d78dbd7a4352/floorplan1.png';
 
       
-        const file = await openai.files.create({
-            file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
-            purpose: "assistants",
-        });
+        // const file = await openai.files.create({
+        //     file: fs.createReadStream(path.join(__dirname, '../public/csv', 'pricing.xlsx')),
+        //     purpose: "assistants",
+        // });
 
-        let assistant;
-        let isAssistantIdExist = await openAIModel.findOne()
+        // let assistant;
+        // let isAssistantIdExist = await openAIModel.findOne()
        
-        if (isAssistantIdExist.assistantId) {
-            try {
-                assistant = await openai.beta.assistants.retrieve(isAssistantIdExist.assistantId);
-            } catch (error) {
-                console.log("Assistant not found, creating a new one");
-                assistant = await createAssistant(file.id);
-            }
-        } else {
-            assistant = await createAssistant(file.id);
-            await openAIModel.findOneAndUpdate({$set:{assistantId:assistant.id}})
-        }
+        // if (isAssistantIdExist.assistantId) {
+        //     try {
+        //         assistant = await openai.beta.assistants.retrieve(isAssistantIdExist.assistantId);
+        //     } catch (error) {
+        //         console.log("Assistant not found, creating a new one");
+        //         assistant = await createAssistant(file.id);
+        //     }
+        // }
+        //  else {
+        //     assistant = await createAssistant(file.id);
+        //     await openAIModel.findOneAndUpdate({$set:{assistantId:assistant.id}})
+        // }
 
+        let assistant = await createAssistant();
+        console.log("assistant --------",assistant)
         const thread = await openai.beta.threads.create({
             messages: [
                 {
                     role: "user",
                     content: [
-                        {
-                            type: "text",
-                            text: "use pricing from uploaded spreadsheet file,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a professional tone dont give a chat like response."
-                        },
+                        // {
+                        //     type: "text",
+                        //     text: "Assists with quantity surveying by analyzing drawings, calculating materials and costs in a professional tone dont give a chat like response."
+                        // },
                         {
                             type: "image_url",
                             image_url: { url: planImage }
@@ -733,7 +733,7 @@ exports.AITestRoute = async(req,res)=>{
                 }
             ]
         });
-
+console.log("thread --------------",thread)
         var accumulatedData = '';
 
         const run = openai.beta.threads.runs.stream(thread.id, {
