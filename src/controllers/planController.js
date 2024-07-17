@@ -177,8 +177,6 @@ exports.addPlans = async (req, res) => {
             })
                 .on('textCreated', (text) => {
                     process.stdout.write('\nassistant > ');
-                    // res.write(`data: ${text}\n\n`);
-                    // accumulatedData.push(text)
 
                 })
                 .on('textDelta', (textDelta, snapshot) => {
@@ -204,11 +202,7 @@ exports.addPlans = async (req, res) => {
                         }
                     });
                     res.end();
-
-
                 });
-
-
         }
     } catch (error) {
         console.log("ERROR::", error);

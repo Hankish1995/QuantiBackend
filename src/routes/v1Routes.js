@@ -12,7 +12,8 @@ let {
     validateSocialLogin,
     validateAddPlans,
     validateDeletePlan,
-    validateChangePassword
+    validateChangePassword,
+    validateUpdateProfile
 } = require("../middlewares/validationMiddleware")
 
 
@@ -26,6 +27,7 @@ router.post('/verifyOTP', validateVerifyOTP, userController.verifyOTP)
 router.put('/resetPassword', validateResetPassword, userController.resetPassword)
 router.post('/socialLogin', validateSocialLogin, userController.socialLogin)
 router.put("/changePassword",authentication,validateChangePassword,userController.changePassword)
+router.put("/updateProfile",authentication,validateUpdateProfile,userController.updateProfile)
 
 
 

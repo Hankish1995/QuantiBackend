@@ -129,7 +129,15 @@ const validateChangePassword = [
   }
 ];
 
-
+const validateUpdateProfile = [
+  check('email','Please add email.').not().isEmpty(),
+  check('email', 'Please enter a correct email format.').isEmail(),
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) { return res.status(400).json({ message: errors.array()[0].msg, type: 'error' }); }
+    next();
+    }
+]
 
 module.exports = {
   validateRegister,
@@ -140,5 +148,6 @@ module.exports = {
   validateSocialLogin,
   validateAddPlans,
   validateDeletePlan,
-  validateChangePassword
+  validateChangePassword,
+  validateUpdateProfile
 };

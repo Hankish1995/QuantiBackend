@@ -2,6 +2,7 @@ let userModel = require('../models/userModel')
 let { generateEncryptedPassword, comparePassword, generateToken, generateOTP } = require("../utils/commonFunctions")
 let { setOtpUsingNodemailer } = require("../utils/nodemailer")
 let bcrypt = require('bcrypt')
+let AWS = require('../utils/awsUpload')
 require('dotenv').config();
 
 
@@ -216,5 +217,48 @@ exports.changePassword = async(req,res)=>{
     }catch(error){
         console.log("ERROR",error)
         return res.status(500).json({message:"Internal server error",type:"error",error:error.message})
+    }
+}
+
+
+
+
+exports.updateProfile = async(req,res)=>{
+    try{
+     let userId = req.result.id
+     let email  = req.body.email
+     let profile = ''
+
+     let isUserExist = await userModel.findOne({_id:userId})
+     if(!isUserExist){return res.status(400).json({message:"User doesn't exist with this ID."}) }
+
+     let isEmailExist = await userModel.findOne({email:email})
+     if(!(email === isUserExist.email)) {  if(isEmailExist){return res.status(400).json({message:"This email is already exist. Please try another email."})}} 
+    
+
+     if (req.files && req.files.profile) {
+        let file = req.files.profile
+        if (file.mimetype == "image/jpeg" || file.mimetype == "image/png" || file.mimetype == "image/jpg") {
+            const profilePath = `UserProfile/${userId}`;
+            const contentType = file.mimetype;
+            const url = await AWS.uploadS3(file, profilePath, contentType);
+            profile = url;
+        } else { return res.status(400).json({ message: 'This format not allowed in the profile. Please add a image having format jpg,png,jpeg', type: "error" })}
+    }
+
+    if(profile === ''){return res.status(400).json({message:"Please add profile.",type:"error"})}
+
+    await userModel.findOneAndUpdate({_id:userId},{
+        $set:{
+            email:email,
+            profile:profile
+        }
+     })
+   
+    return res.status(200).json({message:"User updated successfully.",type:"success"})
+     
+    }catch(error){
+        console.log("ERROR:: ",error)
+        return res.status(500).json({message:"Internal server error.",type:"error",error:error.message})
     }
 }

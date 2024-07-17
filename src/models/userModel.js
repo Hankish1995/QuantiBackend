@@ -2,6 +2,7 @@ let mongoose = require('mongoose')
 
 let userSchema = new mongoose.Schema({
     username: { type: String, default: null },
+    profile:{type:String,default:null},
     email: { type: String, default: null },
     password: { type: String, default: null },
     forgetPasswordOtp: { type: Number, default: null },
