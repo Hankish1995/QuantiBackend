@@ -230,10 +230,10 @@ exports.updateProfile = async(req,res)=>{
      let profile = ''
 
      let isUserExist = await userModel.findOne({_id:userId})
-     if(!isUserExist){return res.status(400).json({message:"User doesn't exist with this ID."}) }
+     if(!isUserExist){return res.status(400).json({message:"User doesn't exist with this ID.",type:"error"}) }
 
      let isEmailExist = await userModel.findOne({email:email})
-     if(!(email === isUserExist.email)) {  if(isEmailExist){return res.status(400).json({message:"This email is already exist. Please try another email."})}} 
+     if(!(email === isUserExist.email)) {  if(isEmailExist){return res.status(400).json({message:"This email is already exist. Please try another email.",type:'error'})}} 
     
 
      if (req.files && req.files.profile) {
@@ -262,3 +262,22 @@ exports.updateProfile = async(req,res)=>{
         return res.status(500).json({message:"Internal server error.",type:"error",error:error.message})
     }
 }
+
+
+
+exports.getUserProfile = async (req, res) => {
+    try {
+        let userId = req.result.id;
+        let isUserExist = await userModel.findOne({ _id: userId });
+
+        if (!isUserExist) { return res.status(400).json({ message: 'User does not exist', type: 'error' }); }
+
+        const { _id, username,email, profile } = isUserExist;
+        const userData = { _id, username, email, profile };
+
+        return res.status(200).json({ userData, type: 'success' });
+    } catch (error) {
+        console.log('ERROR:: ', error);
+        return res.status(500).json({ message: "Internal Server Error.", type: "error", error: error.message });
+    }
+};

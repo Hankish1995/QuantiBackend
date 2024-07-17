@@ -28,6 +28,7 @@ router.put('/resetPassword', validateResetPassword, userController.resetPassword
 router.post('/socialLogin', validateSocialLogin, userController.socialLogin)
 router.put("/changePassword",authentication,validateChangePassword,userController.changePassword)
 router.put("/updateProfile",authentication,validateUpdateProfile,userController.updateProfile)
+router.get('/getUserProfile',authentication,userController.getUserProfile)
 
 
 
