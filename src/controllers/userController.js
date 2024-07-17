@@ -227,6 +227,8 @@ exports.updateProfile = async(req,res)=>{
     try{
      let userId = req.result.id
      let email  = req.body.email
+     let profileUrl = req.body.profile
+
      let profile = ''
 
      let isUserExist = await userModel.findOne({_id:userId})
@@ -246,12 +248,12 @@ exports.updateProfile = async(req,res)=>{
         } else { return res.status(400).json({ message: 'This format not allowed in the profile. Please add a image having format jpg,png,jpeg', type: "error" })}
     }
 
-    if(profile === ''){return res.status(400).json({message:"Please add profile.",type:"error"})}
+    // if(profile === ''){return res.status(400).json({message:"Please add profile.",type:"error"})}
 
     await userModel.findOneAndUpdate({_id:userId},{
         $set:{
             email:email,
-            profile:profile
+            profile:profile?profile:profileUrl
         }
      })
    
