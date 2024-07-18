@@ -135,6 +135,7 @@ async function handlePdf(pdfFile, planImage,res) {
 
 
 
+
 module.exports = {
   createAssistant,
   handleImage, 
