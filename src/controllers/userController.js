@@ -29,7 +29,7 @@ exports.signUp = async (req, res) => {
         };
 
         await userModel.create(userDetailsObj);
-        return res.status(200).json({ message: "User registered successfully.", type: 'success' });
+        return res.status(200).json(successResponse("User registered successfully."));
     } catch (error) {
         console.log('ERROR:: ', error);
         return res.status(500).json(errorResponse(error.message));
@@ -54,7 +54,7 @@ exports.signIn = async (req, res) => {
 
         await userModel.findOneAndUpdate({email:isUserExist.email},{$set:{token:token}})
 
-        return res.status(200).json({ message: 'Logged in successfully.', type: 'success', userObj });
+        return res.status(200).json( successResponse("Logged in successfully.",userObj) );
     } catch (error) {
         console.log(error);
         return res.status(500).json({ message: "Internal Server Error.", type: 'error', error: error.message });
@@ -82,7 +82,7 @@ exports.forgetPassword = async (req, res) => {
             }
         });
 
-        return res.status(200).json({ message: `OTP has been sent to your email ${email}. Valid for 2 minutes.`, type: 'success' });
+        return res.status(200).json(successResponse(`OTP has been sent to your email ${email}. Valid for 2 minutes.`));
     } catch (error) {
         console.log("ERROR::", error);
         return res.status(500).json(errorResponse(error.message));
@@ -111,7 +111,7 @@ exports.verifyOTP = async (req, res) => {
                 forgetPasswordOtpVerified: true
             }
         });
-        return res.status(200).json({ message: "OTP verified successfully.", type: 'success' });
+        return res.status(200).json(successResponse("OTP verified successfully."));
     } catch (error) {
         console.log('ERROR::', error);
         return res.status(500).json(errorResponse(error.message));
@@ -136,7 +136,7 @@ exports.resetPassword = async (req, res) => {
             }
         });
 
-        return res.status(200).json({ message: "Password reset successfully.", type: 'success' });
+        return res.status(200).json(successResponse("Password reset successfully."));
 
     } catch (error) {
         console.log("ERROR::", error);
@@ -214,7 +214,7 @@ exports.changePassword = async(req,res)=>{
             password: passhash,
           }
       })
-      return res.status(200).json({message:"Password changed successfully.",type:"success"})
+      return res.status(200).json(successResponse("Password changed successfully."))
     }catch(error){
         console.log("ERROR",error)
         return res.status(500).json(errorResponse(error.message))
@@ -257,7 +257,7 @@ exports.updateProfile = async(req,res)=>{
         }
      })
    
-    return res.status(200).json({message:"User updated successfully.",type:"success"})
+    return res.status(200).json(successResponse("User updated successfully."))
      
     }catch(error){
         console.log("ERROR:: ",error)

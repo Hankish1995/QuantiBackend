@@ -1,4 +1,4 @@
-exports.successResponse = (message , data = null) => ({
+exports.successResponse = (message = 'success' , data = null) => ({
     type: "success",
     message,
     data

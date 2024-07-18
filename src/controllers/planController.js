@@ -61,7 +61,7 @@ exports.deletePlan = async (req, res) => {
 
         await planModel.findOneAndDelete({ _id: planId })
 
-        return res.status(200).json({ message: isPlanExist.planName + " plan deleted successfully.", type: 'success' })
+        return res.status(200).json(successResponse( "("+isPlanExist.planName  + ") plan deleted successfully."))
 
     } catch (error) {
         console.log('ERROR::', error)
