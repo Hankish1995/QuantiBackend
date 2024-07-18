@@ -7,17 +7,14 @@ require('dotenv').config();
 
 
 
-
+// ____________________________________________________ API to adding plan and getting total cost from OpenAI _________________________
 exports.executePlan = async (req, res) => {
     try {
         const userId = req.result.id;
         const { planName, planAddress } = req.body;
         const pdfFile = req.files.planImage;
-        
 
-        if (!pdfFile) {
-            return res.status(400).json(errorResponse("Please add pdf file."))
-        }
+        if (!pdfFile) { return res.status(400).json(errorResponse("Please add pdf file.")) }
 
         const contentType = pdfFile.mimetype;
         const planImagePath = `planImage/${userId}`;
@@ -25,13 +22,13 @@ exports.executePlan = async (req, res) => {
 
         let accumulatedData = '';
 
-        if (contentType === 'application/pdf') {
+        if (contentType === 'application/pdf') {  
             accumulatedData = await handlePdf(pdfFile, planImage,res);
+
         } else if (['image/jpeg', 'image/png', 'image/jpg'].includes(contentType)) {
             accumulatedData = await handleImage(planImage,res);
-        } else {
-            return res.status(400).json(errorResponse('This file format is not allowed. You can only add images with extension jpeg, png, jpg, and pdf.'))
-        }
+
+        } else { return res.status(400).json(errorResponse('This file format is not allowed. You can only add images with extension jpeg, png, jpg, and pdf.')) }
 
         const planObj = {
             userId,
@@ -40,10 +37,9 @@ exports.executePlan = async (req, res) => {
             imageUrl: planImage,
             outputGenerated: accumulatedData
         };
-        
         await planModel.create(planObj);
-        
         res.end();
+
     } catch (error) {
         return res.status(500).json(errorResponse(error.message))
     }
@@ -52,6 +48,7 @@ exports.executePlan = async (req, res) => {
 
 
 
+// _________________________________________________ API to delete plan individually __________________________________
 exports.deletePlan = async (req, res) => {
     try {
         let planId = req.query.planId;
@@ -71,7 +68,7 @@ exports.deletePlan = async (req, res) => {
 
 
 
-
+// ____________________________API to get all the plans created by a loggedIn user this include pagination with searching funtionality______________
 exports.getAllPlans = async (req, res) => {
     try {
         const columnMapping = {
@@ -139,6 +136,7 @@ exports.getAllPlans = async (req, res) => {
 
 
 
+// ____________________________________ API to get single plan details ________________________________
 exports.get_plan_estimates = async (req, res) => {
     try {
         const plan_id = req.query.planId

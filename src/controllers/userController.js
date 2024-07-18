@@ -7,7 +7,7 @@ let AWS = require('../utils/awsUpload')
 require('dotenv').config();
 
 
-
+// _____________________________ API for testing _____________________
 exports.testRoute = async (req, res) => { res.send('test route successfull..') }
 
 
@@ -37,7 +37,7 @@ exports.signUp = async (req, res) => {
 };
 
 
-
+// _________________________________________  API for login ________________________________
 exports.signIn = async (req, res) => {
     try {
         const { usernameOrEmail, password } = req.body;
@@ -63,7 +63,7 @@ exports.signIn = async (req, res) => {
 
 
 
-
+// __________________________________________  forget password api where we send otp on the registered email __________________________
 exports.forgetPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -90,7 +90,7 @@ exports.forgetPassword = async (req, res) => {
 };
 
 
-
+// ______________________________________________ verify forget password otp ____________________________________
 exports.verifyOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -119,7 +119,7 @@ exports.verifyOTP = async (req, res) => {
 };
 
 
-
+// _________________________________________________ reset password api _______________________________________
 exports.resetPassword = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -146,7 +146,7 @@ exports.resetPassword = async (req, res) => {
 
 
 
-
+// _________________________________________ social login api ________________________________
 exports.socialLogin = async (req, res) => {
     try {
         const { providerName, providerId, email } = req.body;
@@ -194,7 +194,7 @@ exports.socialLogin = async (req, res) => {
 
 
 
-
+// ___________________________________ Change password api ____________________________
 exports.changePassword = async(req,res)=>{
     try{
       let id = req.result.id;
@@ -223,7 +223,7 @@ exports.changePassword = async(req,res)=>{
 
 
 
-
+// ________________________________________ API to update user details _________________________
 exports.updateProfile = async(req,res)=>{
     try{
      let userId = req.result.id
@@ -266,7 +266,7 @@ exports.updateProfile = async(req,res)=>{
 }
 
 
-
+// ___________________________________ API to get a particular user personal details ___________________________
 exports.getUserProfile = async (req, res) => {
     try {
         let userId = req.result.id;
