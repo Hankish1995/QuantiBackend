@@ -3,6 +3,7 @@ const { PDFDocument } = require('pdf-lib');
 const { fromPath } = require('pdf2pic');
 const fs = require('fs')
 const path = require('path');
+const { response } = require('express');
 require('dotenv').config();
 
 
@@ -45,6 +46,7 @@ async function handleImage(planImage,res) {
     { "type": "image_url", "image_url": { "url": planImage } }
     ]}]
     });
+
     let accumulatedData = '';
     await new Promise((resolve, reject) => {
     
@@ -58,9 +60,10 @@ async function handleImage(planImage,res) {
     .on('end', resolve)
     .on('error', reject);
     });
-    return accumulatedData;
+    let threadID = thread.id
+    let response = {accumulatedData,threadID}
+    return {response:response};
   } catch (error) { console.log("ERROR:: ", errorMonitor) }}
-
 
 
 
@@ -128,16 +131,46 @@ async function handlePdf(pdfFile, planImage,res) {
     .on('error', reject);
     });
 
-    return accumulatedData;
+    let threadID = thread.id
+    let response = {accumulatedData,threadID}
+    return {response:response};
   } catch (error) { console.log('ERROR:: ', error) }
 }
 
 
+async function chatWithOpenAi(res, threadID, prompt) {
+  try {
+      let accumulatedData = '';
+      const message = await openai.beta.threads.messages.create(
+        threadID,
+        {
+          role: "user",
+          content: prompt
+        }
+      )
+      await new Promise((resolve, reject) => {
+          const run = openai.beta.threads.runs.stream(threadID, { assistant_id: process.env.OPENAI_ASSISTANT_ID })
+              .on('textDelta', (textDelta) => {
+                  process.stdout.write(textDelta.value);
+                  res.write(textDelta.value);
+                  accumulatedData += textDelta.value;
+              })
+              .on('end', resolve)
+              .on('error', reject);
+      });
+
+      return accumulatedData;
+  } catch (error) {
+      console.error("Error in chatWithOpenAi:", error);
+      throw error;
+  }
+}
 
 
 
 module.exports = {
   createAssistant,
   handleImage, 
-  handlePdf
+  handlePdf,
+  chatWithOpenAi
 }
