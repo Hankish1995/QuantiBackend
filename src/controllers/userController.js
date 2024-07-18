@@ -1,6 +1,7 @@
 let userModel = require('../models/userModel')
 let { generateEncryptedPassword, comparePassword, generateToken, generateOTP } = require("../utils/commonFunctions")
 let { setOtpUsingNodemailer } = require("../utils/nodemailer")
+const {successResponse, errorResponse} = require('../utils/responseHandler')
 let bcrypt = require('bcrypt')
 let AWS = require('../utils/awsUpload')
 require('dotenv').config();
@@ -15,10 +16,10 @@ exports.signUp = async (req, res) => {
         const { username, email, password } = req.body;
 
         let isUsernameAlreadyExist = await userModel.findOne({ username });
-        if (isUsernameAlreadyExist) { return res.status(400).json({ message: "This username is already taken. Please try with another username.", type: 'error' }); }
+        if (isUsernameAlreadyExist) { return res.status(400).json(errorResponse('This username is already taken. Please try with another username.')); }
 
         let isEmailAlreadyExist = await userModel.findOne({ email });
-        if (isEmailAlreadyExist) { return res.status(400).json({ message: "This email is already taken. Please try with another email.", type: 'error' }); }
+        if (isEmailAlreadyExist) { return res.status(400).json(errorResponse('This email is already taken. Please try with another email.')); }
 
         let hashedPassword = await generateEncryptedPassword(password);
         let userDetailsObj = {
@@ -31,7 +32,7 @@ exports.signUp = async (req, res) => {
         return res.status(200).json({ message: "User registered successfully.", type: 'success' });
     } catch (error) {
         console.log('ERROR:: ', error);
-        return res.status(500).json({ message: "Internal Server Error.", type: 'error', error: error.message });
+        return res.status(500).json(errorResponse(error.message));
     }
 };
 
@@ -42,10 +43,10 @@ exports.signIn = async (req, res) => {
         const { usernameOrEmail, password } = req.body;
 
         let isUserExist = await userModel.findOne({ $or: [{ 'username': usernameOrEmail }, { 'email': usernameOrEmail }] });
-        if (!isUserExist) { return res.status(400).json({ message: "User doesn't exist with this username or email.", type: 'error' }); }
+        if (!isUserExist) { return res.status(400).json(errorResponse("User doesn't exist with this username or email.")); }
 
         let isPasswordMatched = await comparePassword(password, isUserExist.password);
-        if (!isPasswordMatched) { return res.status(400).json({ message: "Password doesn't match.", type: 'error' }); }
+        if (!isPasswordMatched) { return res.status(400).json(errorResponse("Password doesn't match.")); }
 
         let token = await generateToken(isUserExist._id);
         let userObj = isUserExist.toObject();
@@ -66,13 +67,13 @@ exports.signIn = async (req, res) => {
 exports.forgetPassword = async (req, res) => {
     try {
         const { email } = req.body;
-
+     
         let isEmailExist = await userModel.findOne({ email });
-        if (!isEmailExist) { return res.status(400).json({ message: "This email is not registered.", type: 'error' }); }
+        if (!isEmailExist) { return res.status(400).json(errorResponse("This email is not registered.")); }
 
         let code = await generateOTP();
         let nodemailerResponse = await setOtpUsingNodemailer(code, email);
-        if (!nodemailerResponse) { return res.status(400).json({ message: "Something went wrong while sending email using nodemailer.", type: 'error' }); }
+        if (!nodemailerResponse) { return res.status(400).json(errorResponse("Something went wrong while sending email using nodemailer.")); }
 
         await userModel.findOneAndUpdate({ email }, {
             $set: {
@@ -84,7 +85,7 @@ exports.forgetPassword = async (req, res) => {
         return res.status(200).json({ message: `OTP has been sent to your email ${email}. Valid for 2 minutes.`, type: 'success' });
     } catch (error) {
         console.log("ERROR::", error);
-        return res.status(500).json({ message: "Internal Server Error.", type: 'error', error: error.message });
+        return res.status(500).json(errorResponse(error.message));
     }
 };
 
@@ -95,14 +96,14 @@ exports.verifyOTP = async (req, res) => {
         const { email, otp } = req.body;
 
         let isEmailExist = await userModel.findOne({ email });
-        if (!isEmailExist) { return res.status(400).json({ message: "This email is not registered.", type: 'error' }); }
+        if (!isEmailExist) { return res.status(400).json(errorResponse("This email is not registered.")); }
 
         var OTP_created_At = new Date(isEmailExist.forgetPasswordOtpSentAt);
         let current_Time = new Date();
         let otp_time = parseInt(Math.abs(current_Time.getTime() - OTP_created_At.getTime()) / 1000);
-        if (otp_time > 120) { return res.status(400).json({ message: "OTP expired", type: 'error' }); }
+        if (otp_time > 120) { return res.status(400).json(errorResponse("OTP expired")); }
 
-        if (!(isEmailExist.forgetPasswordOtp === otp)) { return res.status(400).json({ message: "You are entering incorrect OTP", type: 'error' }); }
+        if (!(isEmailExist.forgetPasswordOtp === otp)) { return res.status(400).json(errorResponse("You are entering incorrect OTP")); }
 
         await userModel.findOneAndUpdate({ email }, {
             $set: {
@@ -113,7 +114,7 @@ exports.verifyOTP = async (req, res) => {
         return res.status(200).json({ message: "OTP verified successfully.", type: 'success' });
     } catch (error) {
         console.log('ERROR::', error);
-        return res.status(500).json({ message: "Internal Server Error.", type: 'error', error: error.message });
+        return res.status(500).json(errorResponse(error.message));
     }
 };
 
@@ -124,9 +125,9 @@ exports.resetPassword = async (req, res) => {
         const { email, password } = req.body;
 
         let isEmailExist = await userModel.findOne({ email });
-        if (!isEmailExist) { return res.status(400).json({ message: "This email is not registered.", type: 'error' }); }
+        if (!isEmailExist) { return res.status(400).json(errorResponse("This email is not registered.")); }
 
-        if (!(isEmailExist.forgetPasswordOtpVerified === true)) { return res.status(400).json({ message: "You cannot change password without otp verification." }) }
+        if (!(isEmailExist.forgetPasswordOtpVerified === true)) { return res.status(400).json(errorResponse("You cannot change password without otp verification.")) }
         let hashedPassword = await generateEncryptedPassword(password);
 
         await userModel.findOneAndUpdate({ email }, {
@@ -139,7 +140,7 @@ exports.resetPassword = async (req, res) => {
 
     } catch (error) {
         console.log("ERROR::", error);
-        return res.status(500).json({ message: "Internal Server Error.", type: 'error', error: error.message });
+        return res.status(500).json(errorResponse(error.message));
     }
 };
 
@@ -187,7 +188,7 @@ exports.socialLogin = async (req, res) => {
         return res.status(200).json({ message: "LoggedIn", type: "success", token: token });
     } catch (error) {
         console.log("ERROR::", error);
-        return res.status(500).json({ message: "Internal Server Error.", type: "error", error: error.message });
+        return res.status(500).json(errorResponse(error.message));
     }
 };
 
@@ -201,10 +202,10 @@ exports.changePassword = async(req,res)=>{
       let newPassword = req.body.newPassword
 
       let userDetails = await userModel.findOne({_id:id})
-      if(!userDetails){return res.status(400).json({message:"loggedIn user not found",type:"error"})}
+      if(!userDetails){return res.status(400).json(errorResponse("loggedIn user not found"))}
 
       let isPassCorrect = await bcrypt.compare(password,userDetails.password)
-      if(!isPassCorrect){return res.status(400).json({message:"Entered current password is not correct",type:"error"})}
+      if(!isPassCorrect){return res.status(400).json(errorResponse("Entered current password is not correct"))}
     
       let salt = await bcrypt.genSalt(10);
       let passhash = await bcrypt.hash(newPassword, salt)
@@ -216,7 +217,7 @@ exports.changePassword = async(req,res)=>{
       return res.status(200).json({message:"Password changed successfully.",type:"success"})
     }catch(error){
         console.log("ERROR",error)
-        return res.status(500).json({message:"Internal server error",type:"error",error:error.message})
+        return res.status(500).json(errorResponse(error.message))
     }
 }
 
@@ -232,10 +233,10 @@ exports.updateProfile = async(req,res)=>{
      let profile = ''
 
      let isUserExist = await userModel.findOne({_id:userId})
-     if(!isUserExist){return res.status(400).json({message:"User doesn't exist with this ID.",type:"error"}) }
+     if(!isUserExist){return res.status(400).json(errorResponse("User doesn't exist with this ID.")) }
 
      let isEmailExist = await userModel.findOne({email:email})
-     if(!(email === isUserExist.email)) {  if(isEmailExist){return res.status(400).json({message:"This email is already exist. Please try another email.",type:'error'})}} 
+     if(!(email === isUserExist.email)) {  if(isEmailExist){return res.status(400).json(errorResponse("This email is already exist. Please try another email."))}} 
     
 
      if (req.files && req.files.profile) {
@@ -245,10 +246,9 @@ exports.updateProfile = async(req,res)=>{
             const contentType = file.mimetype;
             const url = await AWS.uploadS3(file, profilePath, contentType);
             profile = url;
-        } else { return res.status(400).json({ message: 'This format not allowed in the profile. Please add a image having format jpg,png,jpeg', type: "error" })}
+        } else { return res.status(400).json(errorResponse("This format not allowed in the profile. Please add a image having format jpg,png,jpeg"))}
     }
 
-    // if(profile === ''){return res.status(400).json({message:"Please add profile.",type:"error"})}
 
     await userModel.findOneAndUpdate({_id:userId},{
         $set:{
@@ -261,7 +261,7 @@ exports.updateProfile = async(req,res)=>{
      
     }catch(error){
         console.log("ERROR:: ",error)
-        return res.status(500).json({message:"Internal server error.",type:"error",error:error.message})
+        return res.status(500).json(errorResponse(error.message))
     }
 }
 
@@ -272,7 +272,7 @@ exports.getUserProfile = async (req, res) => {
         let userId = req.result.id;
         let isUserExist = await userModel.findOne({ _id: userId });
 
-        if (!isUserExist) { return res.status(400).json({ message: 'User does not exist', type: 'error' }); }
+        if (!isUserExist) { return res.status(400).json(errorResponse("User does not exist")); }
 
         const { _id, username,email, profile } = isUserExist;
         const userData = { _id, username, email, profile };
@@ -280,6 +280,6 @@ exports.getUserProfile = async (req, res) => {
         return res.status(200).json({ userData, type: 'success' });
     } catch (error) {
         console.log('ERROR:: ', error);
-        return res.status(500).json({ message: "Internal Server Error.", type: "error", error: error.message });
+        return res.status(500).json(errorResponse(error.message));
     }
 };

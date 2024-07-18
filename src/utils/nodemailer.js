@@ -6,6 +6,7 @@ require('dotenv').config();
 
 let setOtpUsingNodemailer = async (code, email) => {
     try {
+       
         let transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
@@ -13,7 +14,7 @@ let setOtpUsingNodemailer = async (code, email) => {
                 pass: process.env.GMAIL_PASSWORD
             }
         });
-
+    
         let mailDetails = {
             from: process.env.GMAIL,
             to: email,
@@ -33,11 +34,12 @@ let setOtpUsingNodemailer = async (code, email) => {
             `
         };
         
-
+     
         
         const sendMail = promisify(transporter.sendMail.bind(transporter));
-
+  
         await sendMail(mailDetails);
+       
         return true
     } catch (error) {
         console.log("ERROR::", error);

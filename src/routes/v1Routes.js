@@ -33,11 +33,11 @@ router.get('/getUserProfile',authentication,userController.getUserProfile)
 
 
 //**************** PLANS
-router.post('/addPlans', authentication, validateAddPlans, planController.addPlans)
+router.post('/executePlan', authentication, validateAddPlans, planController.executePlan)
 router.delete('/deletePlan', authentication, validateDeletePlan, planController.deletePlan)
 router.get('/getAllPlans', authentication, planController.getAllPlans)
 router.get('/get_plan_details',authentication,planController.get_plan_estimates)
-router.post('/AITestRoute',planController.AITestRoute)
+
 
 
 
