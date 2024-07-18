@@ -89,6 +89,15 @@ const validateSocialLogin = [
 ];
 
 
+// const validateAddPlans = [
+//   check('sessionId', 'Please provide session Id.').not().isEmpty(),
+//   (req, res, next) => {
+//   const errors = validationResult(req);
+//   if (!errors.isEmpty()) { return res.status(400).json({ message: errors.array()[0].msg, type: 'error' }); }
+//   next();
+//   }
+// ]
+
 const validateAddPlans = [
   check('planName', 'Please provide plan name.').not().isEmpty(),
   check('planAddress', 'Please provide plan address.').not().isEmpty(),
@@ -98,6 +107,7 @@ const validateAddPlans = [
   next();
   }
 ]
+
 
 
 const validateDeletePlan = [

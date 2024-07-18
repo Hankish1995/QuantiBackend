@@ -1,13 +1,12 @@
 let mongoose = require('mongoose')
 let planModel = require("../models/planModel")
 let AWS = require('../utils/awsUpload')
-const {handleImage,handlePdf,chatWithOpenAi} = require('../utils/OpenAI')
-const {successResponse, errorResponse} = require('../utils/responseHandler')
+const { handleImage, handlePdf } = require('../utils/OpenAI')
+const { successResponse, errorResponse } = require('../utils/responseHandler')
 require('dotenv').config();
 
 
 
-// ____________________________________________________ API to adding plan and getting total cost from OpenAI _________________________
 exports.executePlan = async (req, res) => {
     try {
         const userId = req.result.id;
@@ -51,8 +50,7 @@ exports.executePlan = async (req, res) => {
 
 
 
-
-// _________________________________________________ API to delete plan individually __________________________________
+// API to delete plan individually
 exports.deletePlan = async (req, res) => {
     try {
         let planId = req.query.planId;
@@ -62,7 +60,7 @@ exports.deletePlan = async (req, res) => {
 
         await planModel.findOneAndDelete({ _id: planId })
 
-        return res.status(200).json(successResponse( "("+isPlanExist.planName  + ") plan deleted successfully."))
+        return res.status(200).json(successResponse("(" + isPlanExist.planName + ") plan deleted successfully."))
 
     } catch (error) {
         console.log('ERROR::', error)
@@ -72,7 +70,7 @@ exports.deletePlan = async (req, res) => {
 
 
 
-// ____________________________API to get all the plans created by a loggedIn user this include pagination with searching funtionality______________
+//API to get all the plans created by a loggedIn user this include pagination with searching funtionality
 exports.getAllPlans = async (req, res) => {
     try {
         const columnMapping = {
@@ -90,21 +88,24 @@ exports.getAllPlans = async (req, res) => {
         const sortColumn = columnMapping[column.toUpperCase()] || 'createdAt';
 
         const matchStage = {
-        $match: {
-        $and: [
-        { userId: new mongoose.Types.ObjectId(userId) },
-        {
-        $or: [
-        { planName: { $regex: search, $options: 'i' } },
-        { planAddress: { $regex: search, $options: 'i' } },
-        { status: { $regex: search, $options: 'i' } }
-        ].filter(Boolean)
-        }]}};
+            $match: {
+                $and: [
+                    { userId: new mongoose.Types.ObjectId(userId) },
+                    {
+                        $or: [
+                            { planName: { $regex: search, $options: 'i' } },
+                            { planAddress: { $regex: search, $options: 'i' } },
+                            { status: { $regex: search, $options: 'i' } }
+                        ].filter(Boolean)
+                    }]
+            }
+        };
 
         const sortStage = {
-        $sort: {
-        [sortColumn]: sortOrder === 'asc' ? 1 : -1
-        }};
+            $sort: {
+                [sortColumn]: sortOrder === 'asc' ? 1 : -1
+            }
+        };
 
         const facetStage = {
             $facet: {
@@ -140,7 +141,7 @@ exports.getAllPlans = async (req, res) => {
 
 
 
-// ____________________________________ API to get single plan details ________________________________
+// API to get single plan details 
 exports.get_plan_estimates = async (req, res) => {
     try {
         const plan_id = req.query.planId

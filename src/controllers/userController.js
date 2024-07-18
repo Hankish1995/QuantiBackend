@@ -7,10 +7,13 @@ let AWS = require('../utils/awsUpload')
 require('dotenv').config();
 
 
-// _____________________________ API for testing _____________________
+// API for testing 
 exports.testRoute = async (req, res) => { res.send('test route successfull..') }
 
 
+
+
+// API for user registration
 exports.signUp = async (req, res) => {
     try {
         const { username, email, password } = req.body;
@@ -37,7 +40,10 @@ exports.signUp = async (req, res) => {
 };
 
 
-// _________________________________________  API for login ________________________________
+
+
+
+//  API for login 
 exports.signIn = async (req, res) => {
     try {
         const { usernameOrEmail, password } = req.body;
@@ -63,7 +69,10 @@ exports.signIn = async (req, res) => {
 
 
 
-// __________________________________________  forget password api where we send otp on the registered email __________________________
+
+
+
+//  forget password api where we send otp on the registered email 
 exports.forgetPassword = async (req, res) => {
     try {
         const { email } = req.body;
@@ -90,7 +99,9 @@ exports.forgetPassword = async (req, res) => {
 };
 
 
-// ______________________________________________ verify forget password otp ____________________________________
+
+
+// verify forget password otp
 exports.verifyOTP = async (req, res) => {
     try {
         const { email, otp } = req.body;
@@ -119,7 +130,9 @@ exports.verifyOTP = async (req, res) => {
 };
 
 
-// _________________________________________________ reset password api _______________________________________
+
+
+//  reset password api 
 exports.resetPassword = async (req, res) => {
     try {
         const { email, password } = req.body;
@@ -146,7 +159,9 @@ exports.resetPassword = async (req, res) => {
 
 
 
-// _________________________________________ social login api ________________________________
+
+
+//  social login api 
 exports.socialLogin = async (req, res) => {
     try {
         const { providerName, providerId, email } = req.body;
@@ -194,7 +209,9 @@ exports.socialLogin = async (req, res) => {
 
 
 
-// ___________________________________ Change password api ____________________________
+
+
+//  Change password api
 exports.changePassword = async(req,res)=>{
     try{
       let id = req.result.id;
@@ -223,7 +240,9 @@ exports.changePassword = async(req,res)=>{
 
 
 
-// ________________________________________ API to update user details _________________________
+
+
+//  API to update user details 
 exports.updateProfile = async(req,res)=>{
     try{
      let userId = req.result.id
@@ -266,7 +285,9 @@ exports.updateProfile = async(req,res)=>{
 }
 
 
-// ___________________________________ API to get a particular user personal details ___________________________
+
+
+//  API to get a particular user personal details 
 exports.getUserProfile = async (req, res) => {
     try {
         let userId = req.result.id;
