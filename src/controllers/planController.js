@@ -11,9 +11,8 @@ require('dotenv').config();
 exports.executePlan = async (req, res) => {
     try {
         const userId = req.result.id;
-        const { planName, planAddress, sessionId, prompt = "use pricing from uploaded spreadsheet file,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.", threadID } = req.body;
+        const { planName, planAddress } = req.body;
         const pdfFile = req.files.planImage;
-    
 
         if (!pdfFile) { return res.status(400).json(errorResponse("Please add pdf file.")) }
 
@@ -21,48 +20,32 @@ exports.executePlan = async (req, res) => {
         const planImagePath = `planImage/${userId}`;
         const planImage = await AWS.uploadS3(pdfFile, planImagePath, contentType);
 
-        let isSessionExist = await planModel.findOne({sessionId})
-        
         let accumulatedData = '';
 
         if (contentType === 'application/pdf') {  
-            if(isSessionExist){ let thread_ID = isSessionExist.threadId; accumulatedData = await chatWithOpenAi(res,thread_ID,prompt) }else{accumulatedData = await handlePdf(pdfFile, planImage,res);}
-            
+            accumulatedData = await handlePdf(pdfFile, planImage,res);
 
         } else if (['image/jpeg', 'image/png', 'image/jpg'].includes(contentType)) {
-            if(isSessionExist) {let thread_ID = isSessionExist.threadId; accumulatedData = await chatWithOpenAi(res,thread_ID,prompt) } else{accumulatedData = await handleImage(planImage,res,prompt)};
+            accumulatedData = await handleImage(planImage,res);
 
         } else { return res.status(400).json(errorResponse('This file format is not allowed. You can only add images with extension jpeg, png, jpg, and pdf.')) }
-   
 
-        if (isSessionExist) {
-            
-            isSessionExist.chat.push(
-                { sender: 'user', message: prompt },
-                { sender: 'ai', message: accumulatedData}
-            );
-            await isSessionExist.save();
-        } else {
-            const planObj = {
-                userId,
-                planName,
-                planAddress,
-                imageUrl: planImage,
-                sessionId,
-                threadId:accumulatedData.response.threadID,
-                chat: [
-                    { sender: 'ai', message:accumulatedData.response.accumulatedData }
-                ]
-            };
-            await planModel.create(planObj);
-        }
+        const planObj = {
+            userId,
+            planName,
+            planAddress,
+            imageUrl: planImage,
+            outputGenerated: accumulatedData
+        };
+        await planModel.create(planObj);
         res.end();
 
     } catch (error) {
-        console.log("ERROR::",error)
         return res.status(500).json(errorResponse(error.message))
     }
 };
+
+
 
 
 
