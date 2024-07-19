@@ -42,7 +42,7 @@ async function analyseDimensionsFromImage(planImage, res) {
     {
     "role": "user",
     "content": [
-    { "type": "text", "text": "use pricing from uploaded spreadsheet file,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone." },
+    { "type": "text", "text": "use information from file search,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone." },
     { "type": "image_url", "image_url": { "url": planImage } }
     ]}]
     });
@@ -108,7 +108,7 @@ async function analyseDimensionsFromPdf(pdfFile ,res) {
     {
     "role": "user",
     "content": [
-    { "type": "text", "text": "use pricing from uploaded spreadsheet file,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone." },
+    { "type": "text", "text": "use information from file search,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone." },
     ...storeUploadedFileObj.map(imgFile => ({ "type": "image_file", "image_file": { "file_id": imgFile.id } }))
     ]}]});
 
