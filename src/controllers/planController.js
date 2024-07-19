@@ -15,17 +15,19 @@ exports.executePlan = async (req, res) => {
         let accumulatedData = '';
 
         let isSessionExist = await planModel.findOne({ sessionId })
+
         if(isSessionExist){
             if(!prompt){return res.status(400).json(errorResponse("Please add Prompt."))}
             let thread_ID = isSessionExist.threadId;
             accumulatedData = await chatCompletion(res, thread_ID, prompt)
+
             isSessionExist.chat.push(
                 { sender: 'user', message: prompt },
                 { sender: 'quantix', message: accumulatedData }
             );
             await isSessionExist.save();
         }else{
-            if(!planName){return res.status(400).josn(errorResponse("Please provide plan name."))}
+            if(!planName){return res.status(400).json(errorResponse("Please provide plan name."))}
             if(!planAddress){return res.status(400).json(errorResponse("Please provide plan address."))}
             const pdfFile = req.files.planImage;
 
@@ -34,6 +36,7 @@ exports.executePlan = async (req, res) => {
             const planImagePath = `planImage/${userId}`;
             const planImage = await AWS.uploadS3(pdfFile, planImagePath, contentType);
             console.log("plan image -----",planImage)
+
             if (contentType === 'application/pdf') {
                 accumulatedData = await analyseDimensionsFromPdf(pdfFile, res); 
              } else if (['image/jpeg', 'image/png', 'image/jpg'].includes(contentType)) {
