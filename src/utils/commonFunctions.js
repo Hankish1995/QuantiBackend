@@ -1,7 +1,7 @@
 let bcrypt = require('bcrypt')
 let jwt = require('jsonwebtoken')
 let otpGenerator = require("otp-generator")
-require('dotenv').config();
+let config = require('../config/dbConfig')
 
 
 
@@ -30,7 +30,7 @@ let generateToken = async (userId) => {
     try {
         let token = await jwt.sign({
             id: userId
-        }, process.env.SECRET_KEY)
+        }, config.SECRET_KEY)
         return token
     } catch (error) {
         console.log("ERROR::", error)

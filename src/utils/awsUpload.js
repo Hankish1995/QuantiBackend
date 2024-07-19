@@ -1,17 +1,17 @@
 let AWS = require("aws-sdk")
-require('dotenv').config();
+const config = require("../config/dbConfig")
 
 
 module.exports.uploadS3 = (file, folder, contentType) => {
 
     return new Promise(async (resolve, reject) => {
         const s3 = new AWS.S3({
-            accessKeyId: process.env.AWS_ACCESS_KEY_ID,
-            secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY
+            accessKeyId: config.AWS_ACCESS_KEY_ID,
+            secretAccessKey: config.AWS_SECRET_ACCESS_KEY
         })
         const filename = file.name;
         const params = {
-            Bucket: process.env.AWS_BUCKET_NAME,
+            Bucket: config.AWS_BUCKET_NAME,
             Key: folder + "/" + filename,
             Body: file.data,
             ACL: 'public-read',

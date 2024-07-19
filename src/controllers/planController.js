@@ -1,48 +1,65 @@
 let mongoose = require('mongoose')
 let planModel = require("../models/planModel")
 let AWS = require('../utils/awsUpload')
-const { handleImage, handlePdf } = require('../utils/OpenAI')
+const { analyseDimensionsFromImage, analyseDimensionsFromPdf,chatCompletion } = require('../utils/OpenAI')
 const { successResponse, errorResponse } = require('../utils/responseHandler')
-require('dotenv').config();
+
 
 
 
 exports.executePlan = async (req, res) => {
     try {
         const userId = req.result.id;
-        const { planName, planAddress } = req.body;
-        const pdfFile = req.files.planImage;
-
-        if (!pdfFile) { return res.status(400).json(errorResponse("Please add pdf file.")) }
-
-        const contentType = pdfFile.mimetype;
-        const planImagePath = `planImage/${userId}`;
-        const planImage = await AWS.uploadS3(pdfFile, planImagePath, contentType);
+        const { planName, planAddress, sessionId, prompt} = req.body;
 
         let accumulatedData = '';
 
-        if (contentType === 'application/pdf') {  
-            accumulatedData = await handlePdf(pdfFile, planImage,res);
+        let isSessionExist = await planModel.findOne({ sessionId })
+        if(isSessionExist){
+            if(!prompt){return res.status(400).json(errorResponse("Please add Prompt."))}
+            let thread_ID = isSessionExist.threadId;
+            accumulatedData = await chatCompletion(res, thread_ID, prompt)
+            isSessionExist.chat.push(
+                { sender: 'user', message: prompt },
+                { sender: 'quantix', message: accumulatedData }
+            );
+            await isSessionExist.save();
+        }else{
+            if(!planName){return res.status(400).josn(errorResponse("Please provide plan name."))}
+            if(!planAddress){return res.status(400).json(errorResponse("Please provide plan address."))}
+            const pdfFile = req.files.planImage;
 
-        } else if (['image/jpeg', 'image/png', 'image/jpg'].includes(contentType)) {
-            accumulatedData = await handleImage(planImage,res);
-
-        } else { return res.status(400).json(errorResponse('This file format is not allowed. You can only add images with extension jpeg, png, jpg, and pdf.')) }
-
-        const planObj = {
-            userId,
-            planName,
-            planAddress,
-            imageUrl: planImage,
-            outputGenerated: accumulatedData
-        };
-        await planModel.create(planObj);
+       
+            const contentType = pdfFile.mimetype;
+            const planImagePath = `planImage/${userId}`;
+            const planImage = await AWS.uploadS3(pdfFile, planImagePath, contentType);
+            console.log("plan image -----",planImage)
+            if (contentType === 'application/pdf') {
+                accumulatedData = await analyseDimensionsFromPdf(pdfFile, res); 
+             } else if (['image/jpeg', 'image/png', 'image/jpg'].includes(contentType)) {
+                accumulatedData = await analyseDimensionsFromImage(planImage, res) ;
+             } else { return res.status(400).json(errorResponse('This file format is not allowed. You can only add images with extension jpeg, png, jpg, and pdf.')) }
+     
+             const planObj = {
+                 userId,
+                 planName,
+                 planAddress,
+                 imageUrl: planImage,
+                 sessionId,
+                 threadId: accumulatedData.response.threadID,
+                 chat: [
+                     { sender: 'quantix', message: accumulatedData.response.accumulatedData }
+                 ]
+             };
+             await planModel.create(planObj);
+        }
         res.end();
-
     } catch (error) {
+        console.log("ERROR::", error)
         return res.status(500).json(errorResponse(error.message))
     }
 };
+
 
 
 

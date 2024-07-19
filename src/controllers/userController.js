@@ -4,7 +4,7 @@ let { setOtpUsingNodemailer } = require("../utils/nodemailer")
 const {successResponse, errorResponse} = require('../utils/responseHandler')
 let bcrypt = require('bcrypt')
 let AWS = require('../utils/awsUpload')
-require('dotenv').config();
+
 
 
 // API for testing 

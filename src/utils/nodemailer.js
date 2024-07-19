@@ -1,6 +1,6 @@
 let nodemailer = require('nodemailer')
 const { promisify } = require('util');
-require('dotenv').config();
+let config = require("../config/dbConfig")
 
 
 
@@ -10,13 +10,13 @@ let setOtpUsingNodemailer = async (code, email) => {
         let transporter = nodemailer.createTransport({
             service: 'gmail',
             auth: {
-                user: process.env.GMAIL,
-                pass: process.env.GMAIL_PASSWORD
+                user: config.GMAIL,
+                pass: config.GMAIL_PASSWORD
             }
         });
     
         let mailDetails = {
-            from: process.env.GMAIL,
+            from: config.GMAIL,
             to: email,
             subject: 'Forget Password OTP',
             html: `
@@ -29,7 +29,7 @@ let setOtpUsingNodemailer = async (code, email) => {
                         <p style="font-size: 16px; line-height: 1.6;">You have requested a password reset. Please use the OTP above to proceed.</p>
                         <p style="font-size: 14px; color: #888;">This OTP is valid for a limited time.</p>
                     </div>
-                    <p style="font-size: 12px; color: #888; margin-top: 20px;">This email was sent from ${process.env.GMAIL}. Please do not reply to this email.</p>
+                    <p style="font-size: 12px; color: #888; margin-top: 20px;">This email was sent from ${config.GMAIL}. Please do not reply to this email.</p>
                 </div>
             `
         };

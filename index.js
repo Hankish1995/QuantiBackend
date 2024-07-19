@@ -4,8 +4,7 @@ let app = express()
 let v1Route = require('./src/routes/v1Routes')
 let cors = require('cors')
 let fileUpload= require('express-fileupload')
-require('dotenv').config();
-let db = require('./src/config/dbConfig')
+let config = require('./src/config/dbConfig')
 
 
 
@@ -21,7 +20,7 @@ app.use(fileUpload())
 app.use('/api/v1/', v1Route)
 
 mongoose.set('strictQuery', false);
-mongoose.connect(db.url);
+mongoose.connect(config.url);
 
 
-app.listen(process.env.PORT, () => console.log('backend is running...'))
+app.listen(config.PORT, () => console.log('backend is running...'))

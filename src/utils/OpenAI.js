@@ -8,32 +8,33 @@ require('dotenv').config();
 
 
 
-const openai = new OpenAI({apiKey: process.env.CHATGPT_KEY,});
+const openai = new OpenAI({ apiKey: process.env.CHATGPT_KEY, });
 
 
 
-// _______________________________________________ CREATE OPENAI ASSISTANT ______________________
+//  CREATE OPENAI ASSISTANT 
 async function createAssistant(fileId) {
-  try{
+  try {
     console.log("creating the new assisatant")
     const assistant = await openai.beta.assistants.create({
-    name: "Quanti",
-    description: "Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.",
-    instructions: "Quanti is designed to assist with quantity surveying. It reads and analyzes architectural drawings to calculate the volume and area of various elements. Once these calculations are made, it refers to an uploaded pricing spreadsheet to determine the cost of the project. Quanti provides accurate, clear, and detailed responses based on the data provided. It emphasizes precision and clarity in its calculations and avoids any assumptions without data. Quanti communicates in a casual tone, making it approachable and easy to understand for tradesmen. When a house plan is uploaded, Quanti the total quote based on rates from an uploaded spreadsheet",
-    model: "gpt-4o",
-    tools: [{ "type": "file_search" }],
+      name: "Quanti",
+      description: "Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.",
+      instructions: "Quanti is designed to assist with quantity surveying. It reads and analyzes architectural drawings to calculate the volume and area of various elements. Once these calculations are made, it refers to an uploaded pricing spreadsheet to determine the cost of the project. Quanti provides accurate, clear, and detailed responses based on the data provided. It emphasizes precision and clarity in its calculations and avoids any assumptions without data. Quanti communicates in a casual tone, making it approachable and easy to understand for tradesmen. When a house plan is uploaded, Quanti the total quote based on rates from an uploaded spreadsheet",
+      model: "gpt-4o",
+      tools: [{ "type": "file_search" }],
     });
     return assistant;
-  }catch(error){
-    console.log('Error::',error)
-  }}
+  } catch (error) {
+    console.log('Error::', error)
+  }
+}
 
 
 
 
 
-// ___________________________________________ HANDLE IMAGE UPLOAD IN OPENAI ______________________________________
-async function handleImage(planImage,res) {
+// HANDLE IMAGE UPLOAD IN OPENAI 
+async function analyseDimensionsFromImage(planImage, res) {
   try {
     console.log("in the image section----")
     const thread = await openai.beta.threads.create({
@@ -58,16 +59,18 @@ async function handleImage(planImage,res) {
     .on('end', resolve)
     .on('error', reject);
     });
-    return accumulatedData;
-  } catch (error) { console.log("ERROR:: ", errorMonitor) }}
+    let threadID = thread.id
+    let response = { accumulatedData, threadID }
+    return { response: response };
+  } catch (error) { console.log("ERROR:: ", error) }
+}
 
 
 
 
 
-
-// __________________________________ HANDLE PDF UPLOAD IN OPENAI ______________________________________
-async function handlePdf(pdfFile, planImage,res) {
+// HANDLE PDF UPLOAD IN OPENAI 
+async function analyseDimensionsFromPdf(pdfFile ,res) {
   try {
     console.log('in the pdf section------')
     const outputDir = path.join(__dirname, 'output');
@@ -128,7 +131,9 @@ async function handlePdf(pdfFile, planImage,res) {
     .on('error', reject);
     });
 
-    return accumulatedData;
+    let threadID = thread.id
+    let response = { accumulatedData, threadID }
+    return { response: response };
   } catch (error) { console.log('ERROR:: ', error) }
 }
 
@@ -136,8 +141,43 @@ async function handlePdf(pdfFile, planImage,res) {
 
 
 
+
+
+
+//HANDLE CHAT WITH QUANTIX
+async function chatCompletion(res, threadID, prompt) {
+  try {
+    let accumulatedData = '';
+    const message = await openai.beta.threads.messages.create(
+      threadID,
+      {
+        role: "user",
+        content: prompt
+      }
+    )
+    await new Promise((resolve, reject) => {
+      const run = openai.beta.threads.runs.stream(threadID, { assistant_id: process.env.OPENAI_ASSISTANT_ID })
+        .on('textDelta', (textDelta) => {
+          process.stdout.write(textDelta.value);
+          res.write(textDelta.value);
+          accumulatedData += textDelta.value;
+        })
+        .on('end', resolve)
+        .on('error', reject);
+    });
+
+    return accumulatedData;
+  } catch (error) {
+    console.error("Error in chatWithOpenAi:", error);
+    throw error;
+  }
+}
+
+
+
 module.exports = {
   createAssistant,
-  handleImage, 
-  handlePdf
+  analyseDimensionsFromImage,
+  analyseDimensionsFromPdf,
+  chatCompletion
 }

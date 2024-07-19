@@ -1,5 +1,5 @@
 let jwt = require('jsonwebtoken')
-require('dotenv').config();
+const config = require('../config/dbConfig')
 
 
 let verifyToken = (req, res, next) => {
@@ -11,7 +11,7 @@ let verifyToken = (req, res, next) => {
 
             token = token.split(' ')[1];
 
-            let user = jwt.verify(token, process.env.SECRET_KEY)
+            let user = jwt.verify(token, config.SECRET_KEY)
 
             req.result = user
 
