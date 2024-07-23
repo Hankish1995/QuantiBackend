@@ -1,6 +1,6 @@
 let userModel = require('../models/userModel')
 let { generateEncryptedPassword, comparePassword, generateToken, generateOTP } = require("../utils/commonFunctions")
-let { setOtpUsingNodemailer } = require("../utils/nodemailer")
+let { sendOtpUsingNodemailer } = require("../utils/nodemailer")
 const {successResponse, errorResponse} = require('../utils/responseHandler')
 let bcrypt = require('bcrypt')
 let AWS = require('../utils/awsUpload')
@@ -81,7 +81,7 @@ exports.forgetPassword = async (req, res) => {
         if (!isEmailExist) { return res.status(400).json(errorResponse("This email is not registered.")); }
 
         let code = await generateOTP();
-        let nodemailerResponse = await setOtpUsingNodemailer(code, email);
+        let nodemailerResponse = await sendOtpUsingNodemailer(code, email);
         if (!nodemailerResponse) { return res.status(400).json(errorResponse("Something went wrong while sending email using nodemailer.")); }
 
         await userModel.findOneAndUpdate({ email }, {

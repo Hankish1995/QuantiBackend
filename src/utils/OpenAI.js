@@ -33,7 +33,7 @@ async function createAssistant(fileId) {
 
 
 
-// HANDLE IMAGE UPLOAD IN OPENAI 
+// getting dimesions from image and provide a totalproject cost with that sending data to frontend in streams. 
 async function analyseDimensionsFromImage(planImage, res) {
   try {
     console.log("in the image section----")
@@ -42,7 +42,7 @@ async function analyseDimensionsFromImage(planImage, res) {
     {
     "role": "user",
     "content": [
-    { "type": "text", "text": "use information from file search,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone." },
+    { "type": "text", "text": "use information from file search,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.If the file is not related to the architecture then please give response like this file data not releted to this platform." },
     { "type": "image_url", "image_url": { "url": planImage } }
     ]}]
     });
@@ -69,7 +69,7 @@ async function analyseDimensionsFromImage(planImage, res) {
 
 
 
-// HANDLE PDF UPLOAD IN OPENAI 
+// converting pdf to image and then taking dimensions form the image to calculate the total project cost and sending data to frontend in streams
 async function analyseDimensionsFromPdf(pdfFile ,res) {
   try {
     console.log('in the pdf section------')
@@ -108,7 +108,7 @@ async function analyseDimensionsFromPdf(pdfFile ,res) {
     {
     "role": "user",
     "content": [
-    { "type": "text", "text": "use information from file search,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone." },
+    { "type": "text", "text": "use information from file search,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone.If the file is not related to the architecture then please give response like this file data not releted to this platform." },
     ...storeUploadedFileObj.map(imgFile => ({ "type": "image_file", "image_file": { "file_id": imgFile.id } }))
     ]}]});
 
@@ -144,7 +144,7 @@ async function analyseDimensionsFromPdf(pdfFile ,res) {
 
 
 
-//HANDLE CHAT WITH QUANTIX
+//continue chat with the quantix
 async function chatCompletion(res, threadID, prompt) {
   try {
     let accumulatedData = '';

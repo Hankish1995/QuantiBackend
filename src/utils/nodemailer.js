@@ -4,7 +4,7 @@ let config = require("../config/dbConfig")
 
 
 
-let setOtpUsingNodemailer = async (code, email) => {
+let sendOtpUsingNodemailer = async (code, email) => {
     try {
        
         let transporter = nodemailer.createTransport({
@@ -48,7 +48,7 @@ let setOtpUsingNodemailer = async (code, email) => {
 };
 
 module.exports = {
-    setOtpUsingNodemailer
+    sendOtpUsingNodemailer
 };
 
 

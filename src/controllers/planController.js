@@ -6,9 +6,10 @@ const { successResponse, errorResponse } = require('../utils/responseHandler')
 
 
 
-
+//taking file and create a url by aws and then analyse the dimensions uisng openai to find the total project cost
 exports.executePlan = async (req, res) => {
     try {
+        console.log("inside the execute plan api----")
         const userId = req.result.id;
         const { planName, planAddress, sessionId, prompt} = req.body;
 
@@ -62,10 +63,6 @@ exports.executePlan = async (req, res) => {
         return res.status(500).json(errorResponse(error.message))
     }
 };
-
-
-
-
 
 
 
