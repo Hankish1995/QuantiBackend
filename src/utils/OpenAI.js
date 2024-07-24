@@ -84,6 +84,7 @@ async function analyseDimensionsFromPdf(pdfFile ,res) {
     const pdfDoc = await PDFDocument.load(existingPdfBytes);
     const totalPages = pdfDoc.getPageCount();
     console.log("Pages:", totalPages);
+    // if(totalPages>9){return res.status(400).json({message:"Pdf file should not contain pages more than 9"})}
 
     const options = { density: 500, saveFilename: "page", savePath: outputDir, format: "png", width: 1200, height: 1200 };
     const convert = fromPath(pdfFilePath, options);
@@ -102,13 +103,13 @@ async function analyseDimensionsFromPdf(pdfFile ,res) {
     console.error('Error converting or uploading page:', conversionError);
     }}
 
-    console.log("file --------",storeUploadedFileObj)
+    
     const thread = await openai.beta.threads.create({
     messages: [
     {
     "role": "user",
     "content": [
-    { "type": "text", "text": "If the file is not related to the dimensions then please give response like this 'file do not contains any dimensions.' otherwise use information from file search,Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone." },
+    { "type": "text", "text": "if the image is non-dimensional then respond 'this file is not related to this platfrom' otherwise use information from file search(Costing.pdf),Assists with quantity surveying by analyzing drawings, calculating materials and costs in a casual tone. Firstly give the information about the image and then calculate the cost." },
     ...storeUploadedFileObj.map(imgFile => ({ "type": "image_file", "image_file": { "file_id": imgFile.id } }))
     ]}]});
 
@@ -136,8 +137,6 @@ async function analyseDimensionsFromPdf(pdfFile ,res) {
     return { response: response };
   } catch (error) { console.log('ERROR:: ', error) }
 }
-
-
 
 
 
@@ -175,9 +174,16 @@ async function chatCompletion(res, threadID, prompt) {
 
 
 
+const getPageCount = async (pdfFile) => {
+  const pdfDoc = await PDFDocument.load(pdfFile.data);
+  return pdfDoc.getPageCount();
+};
+
+
 module.exports = {
   createAssistant,
   analyseDimensionsFromImage,
   analyseDimensionsFromPdf,
-  chatCompletion
+  chatCompletion,
+  getPageCount
 }

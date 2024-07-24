@@ -1,7 +1,7 @@
 let mongoose = require('mongoose')
 let planModel = require("../models/planModel")
 let AWS = require('../utils/awsUpload')
-const { analyseDimensionsFromImage, analyseDimensionsFromPdf,chatCompletion } = require('../utils/OpenAI')
+const { analyseDimensionsFromImage, analyseDimensionsFromPdf,chatCompletion,getPageCount } = require('../utils/OpenAI')
 const { successResponse, errorResponse } = require('../utils/responseHandler')
 
 
@@ -39,11 +39,16 @@ exports.executePlan = async (req, res) => {
             console.log("plan image -----",planImage)
 
             if (contentType === 'application/pdf') {
+                const pageCount = await getPageCount(pdfFile);
+                if (pageCount > 9) {
+                  return res.status(400).json({ message: "Pdf file should not contain pages more than 9 pages" ,type:"error"});
+                }
                 accumulatedData = await analyseDimensionsFromPdf(pdfFile, res); 
              } else if (['image/jpeg', 'image/png', 'image/jpg'].includes(contentType)) {
                 accumulatedData = await analyseDimensionsFromImage(planImage, res) ;
              } else { return res.status(400).json(errorResponse('This file format is not allowed. You can only add images with extension jpeg, png, jpg, and pdf.')) }
      
+            
              const planObj = {
                  userId,
                  planName,
